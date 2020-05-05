@@ -1,0 +1,221 @@
+const std = @import("std");
+const ok = std.testing.ok;
+const testing = std.testing;
+const fs = std.fs;
+const heap = std.heap;
+const Allocator = heap.Allocator;
+const mem = std.mem;
+const math = std.math;
+const os = std.os;
+
+//0x7,0xbは、公式で未定義なので、スキップしている(todo)
+const PiModel = enum(u32) {
+    PI_MODEL_A = 0x0,
+    PI_MODEL_B,
+    PI_MODEL_AP,
+    PI_MODEL_BP,
+    PI_MODEL_2B,
+    PI_MODEL_ALPHA,
+    PI_MODEL_CM,
+    PI_MODEL_3B = 0x8,
+    PI_MODEL_ZERO,
+    PI_MODEL_CM3,
+    PI_MODEL_ZERO_W = 0xc,
+    PI_MODEL_3BP,
+    PI_MODEL_3AP,
+    PI_MODEL_INTERNAL_USE_ONLY,
+    PI_MODEL_CM3P,
+    PI_MODEL_4B,
+    PI_MODEL_UNKNOWN,
+
+    pub fn get_from_revision(revison:u32) PiModel {
+
+        const model : u32 = (revison & (0xFF <<  4)) >>  4 ;
+        std.debug.warn("model = {}\n", model);
+
+        return @intToEnum(PiModel,model);
+    }
+
+    pub fn get_names(comptime self: PiModel) []u8 {
+    //使用機会がないので一旦保留
+    }
+};
+
+//EMBESTが二つ登場するのでとりあえず1st,2ndで分けている(todo)
+const PiMaker = enum(u32) {
+    PI_MAKER_SONY_UK = 0x0,
+    PI_MAKER_EGOMAN,
+    PI_MAKER_EMBEST_1st,
+    PI_MAKER_SONY_JAPAN,
+    PI_MAKER_EMBEST_2nd,
+    PI_MAKER_STADIUM,
+    PI_MAKER_UNKNOWN,
+
+    pub fn get_from_revision(revison:u32) PiMaker {
+
+        const maker : u32 = (revison & (0x0F << 16)) >> 16 ;
+        std.debug.warn("maker = {}\n", maker);
+
+        return @intToEnum(PiMaker,maker);
+    }
+
+    pub fn get_names(comptime self: PiModel) []u8 {
+    //使用機会がないので一旦保留
+    }
+};
+
+const PiVersion = enum(u32) {
+    PI_VERSION_1 = 0x0,
+    PI_VERSION_1_1,
+    PI_VERSION_1_2,
+    PI_VERSION_1_3,
+    PI_VERSION_2,
+    PI_VERSION_UNKNOWN,
+
+    pub fn get_from_revision(revison:u32) PiVersion {
+
+        const version : u32 = (revison & (0x0F <<  0)) >>  0 ;
+        std.debug.warn("version = {}\n", version);
+
+        return @intToEnum(PiVersion,version);
+    }
+
+    pub fn get_names(comptime self: PiModel) []u8 {
+    //使用機会がないので一旦保留
+    }
+};
+
+pub const BoardInfomation = struct {
+
+    model:PiModel,
+    maker:PiMaker,
+    version:PiVersion,
+
+    const Self = @This();
+
+    pub fn init() anyerror!BoardInfomation {
+
+        const stdout = try std.fs.getStdOut();
+
+        const valueCpuInfo = cpuinfo_read() catch unreachable;
+
+        defer heap.free(heap.direct_allocator, valueCpuInfo); //cpuinfo_read(正常系)のメモリ開放
+
+        const RevisionName = zenChikaSerch(valueCpuInfo,"Revision\t: "[0..]);//リビジョン情報を取得
+
+        const RevisionNum = sliceToNum(RevisionName,16) ;//リビジョン情報を整数型に変換
+
+        return Self {
+            .model = PiModel.get_from_revision(RevisionNum),
+            .maker = PiMaker.get_from_revision(RevisionNum),
+            .version = PiVersion.get_from_revision(RevisionNum),
+        };
+    }
+    ///////////////////////////////////////////
+    // @brief  cpuinfoを読み込み、内容を返す
+    // @note
+    //   allocで確保した領域の開放について
+    //    正常終了 -> 呼び出し元で開放
+    //    異常終了 -> この関数内で開放
+    ///////////////////////////////////////////
+    fn cpuinfo_read()  ![]u8 {
+
+        // const file = try fs.File.openRead("/proc/cpuinfo");//本来のpathは"/proc/cpuinfo"
+        const file = try fs.File.openRead("/Users/endy/ZenProject/ZenChika/zen_chika/cpuinfo");//本来のpathは"/proc/cpuinfo"
+        defer file.close();
+        // const size = @intCast(usize, try file.getEndPos());
+        const size = 1500;
+        const buffer = try heap.alloc(heap.direct_allocator, u8, size);//ファイルの中身を置くためのメモリ確保
+        const read = try file.read(buffer);
+        errdefer heap.free(heap.direct_allocator, buffer);//異常終了の場合はここでメモリ開放
+
+        std.debug.warn("取得した文字列の長さ = {}\n", file.getEndPos());
+
+        return read;
+
+    }
+    ///////////////////////////////////////////
+    // @brief  検索文字列から始まる一行を特定し、その後に続く改行文字までの内容を返す
+    // @note
+    //   検索文字列から始まる一行が複数行あった場合は、初めにヒットしたものが選択される
+    ///////////////////////////////////////////
+    fn zenChikaSerch(value:[]const u8,serchWord:[]const u8)  []const u8 {
+
+        var i       : usize = 0;
+        var start   : usize = 0;//一行の最初のインデックス
+
+        while (i < value.len) {
+            if(value[i] == '\n'){
+                const slice = value[start..i];//一行をスライス型で取得
+                if(slice.len > serchWord.len){//一行が検索文字列よりも長いこと
+                    if( mem.startsWith(u8, slice, serchWord) ){//一行の先頭が検索文字列と一致するか
+                        return slice[serchWord.len..];//一行の中から検索文字列を削除した残りを返す
+                    }
+                }
+                start = i + 1;
+            }
+            i += 1;
+        }
+        return value;
+    }
+    ///////////////////////////////////////////
+    // @brief  文字列を数値型にキャストする
+    // @note
+    //   第二引数として与えた進数に基づいて変換する
+    ///////////////////////////////////////////
+    fn sliceToNum(str:[]const u8,base:u8)  u32 {
+
+        var i       : u32 = 0;
+        var sumNum  : u32 = 0;
+        const numberOffset   = 0;
+        const alphabetOffset = 10;
+
+        while( i < str.len ) {
+            var num : u32 = 0;
+            if( (str[i] >= '0') and (str[i] <= '9') ){
+
+                num = (str[i] - '0' + numberOffset);//アスキー表から文字列を数値に変換
+
+            } else if( (str[i] >= 'a') and (str[i] <= 'z') ){
+
+                num = (str[i] - 'a' + alphabetOffset);//アスキー表から文字列を数値に変換
+
+            } else {
+                std.debug.warn("数値にキャストできる文字列ではありません。\n");
+            }
+            sumNum += num * math.pow(u32, base, @intCast(u32,str.len)-i-1);//指定された進数で計算
+            i+=1;
+        }
+        return sumNum;
+    }
+};
+test "PiModel" {
+    var rev : u32 = 0xa02082;
+
+    const model = PiModel.get_from_revision(rev);
+    std.testing.equal(model, PiModel.PI_MODEL_3B);
+}
+
+test "PiMaker" {
+    var rev : u32 = 0xa02082;
+
+    const maker = PiMaker.get_from_revision(rev);
+    std.testing.equal(maker, PiMaker.PI_MAKER_SONY_UK);
+}
+
+test "PiVersion" {
+    var rev : u32 = 0xa02082;
+
+    const version = PiVersion.get_from_revision(rev);
+    std.testing.equal(version, PiVersion.PI_VERSION_1_2);
+    
+}
+
+test "BoardInfomation" {
+    const BI = BoardInfomation.init() catch unreachable;
+
+    std.testing.equal(BI.model, PiModel.PI_MODEL_4B);
+    std.testing.equal(BI.maker, PiMaker.PI_MAKER_SONY_UK);
+    std.testing.equal(BI.version, PiVersion.PI_VERSION_1_2);
+    
+}
