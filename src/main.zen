@@ -1,5 +1,31 @@
 const std = @import("std");
 
+const GpioPort = @import("gpio-port.zen");
+const GP = GpioPort.GpioPort;
+
 pub fn main() anyerror!void {
+    const gpioPort = GP.init(); //初期化->Gpio,GpioPin
+
+    GP.pin_mode(0,1) catch unreachable;   //仮想Pin0をアウトプット(1)に設定
+
+    GP.digital_write(0,1) catch unreachable;    //仮想Pin0を点灯
+    std.time.sleep(1000 * std.time.millisecond);
+    GP.digital_write(0,0) catch unreachable;    //仮想Pin0を消灯
+    std.time.sleep(1000 * std.time.millisecond);
+    GP.digital_write(0,1) catch unreachable;    //仮想Pin0を点灯
+    std.time.sleep(1000 * std.time.millisecond);
+    GP.digital_write(0,0) catch unreachable;    //仮想Pin0を消灯
+    std.time.sleep(1000 * std.time.millisecond);
+    GP.digital_write(0,1) catch unreachable;    //仮想Pin0を点灯
+    std.time.sleep(1000 * std.time.millisecond);
+    GP.digital_write(0,0) catch unreachable;    //仮想Pin0を消灯
+    std.time.sleep(1000 * std.time.millisecond);
+
+    // var result:u1 = GP.digital_read(0) catch unreachable;    //仮想Pin0の状態を取得
+
     std.debug.warn("Congratulations on your first step to writing perfect software in Zen.\n");
+}
+
+test "main"{
+    main() catch unreachable;
 }

@@ -1,0 +1,55 @@
+const std = @import("std");
+const ok = std.testing.ok;
+const testing = std.testing;
+const fs = std.fs;
+const heap = std.heap;
+const Allocator = heap.Allocator;
+const mem = std.mem;
+const math = std.math;
+const os = std.os;
+
+const BoardInfomation = @import("board-infomation.zen");
+const BI = BoardInfomation.BoardInfomation;
+
+const GpioRegister = @import("gpio-register.zen");
+const GR = GpioRegister.GpioRegister;
+
+pub const Gpio = struct {
+    boardInfo:BI,
+    gpioReg:GR,
+    const Self = @This();
+
+    pub fn init() anyerror!Gpio {
+        return Self{
+            .boardInfo = BI.init() catch unreachable,
+            .gpioReg = GR.get_ptr(0x3F000000) catch unreachable,
+        };
+    }
+    pub fn pin_mode(physPin:u32,mode:u32) anyerror!void {
+        GR.pin_mode(physPin,mode);
+        return;
+    }
+    pub fn reg_set(physPin:u32) anyerror!void {
+        GR.reg_set(physPin);
+        return;
+    }
+    pub fn reg_clr(physPin:u32) anyerror!void {
+        GR.reg_clr(physPin);
+        return;
+    }
+    pub fn reg_lev(physPin:u32) anyerror!u1 {
+        //どこで使用するか不明なため保留
+    }
+};
+
+// test "Gpio" {
+//     const gpio = Gpio.init() catch unreachable;
+//     std.testing.equal(gpio.boardInfo.model, BoardInfomation.PiModel.PI_MODEL_4B);
+//     std.testing.equal(gpio.boardInfo.maker, BoardInfomation.PiMaker.PI_MAKER_SONY_UK);
+//     std.testing.equal(gpio.boardInfo.version, BoardInfomation.PiVersion.PI_VERSION_1_2);
+
+//     Gpio.pin_mode(17,1) catch unreachable;
+//     Gpio.reg_set(17) catch unreachable;
+//     Gpio.reg_clr(17) catch unreachable;
+// }
+

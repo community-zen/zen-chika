@@ -9,7 +9,8 @@ const math = std.math;
 const os = std.os;
 
 //0x7,0xbは、公式で未定義なので、スキップしている(todo)
-const PiModel = enum(u32) {
+//gpio.zenとの間のテストのためpub化させている
+pub const PiModel = enum(u32) {
     PI_MODEL_A = 0x0,
     PI_MODEL_B,
     PI_MODEL_AP,
@@ -31,7 +32,7 @@ const PiModel = enum(u32) {
     pub fn get_from_revision(revison:u32) PiModel {
 
         const model : u32 = (revison & (0xFF <<  4)) >>  4 ;
-        std.debug.warn("model = {}\n", model);
+        // std.debug.warn("model = {}\n", model);
 
         return @intToEnum(PiModel,model);
     }
@@ -42,7 +43,8 @@ const PiModel = enum(u32) {
 };
 
 //EMBESTが二つ登場するのでとりあえず1st,2ndで分けている(todo)
-const PiMaker = enum(u32) {
+//gpio.zenとの間のテストのためpub化させている
+pub const PiMaker = enum(u32) {
     PI_MAKER_SONY_UK = 0x0,
     PI_MAKER_EGOMAN,
     PI_MAKER_EMBEST_1st,
@@ -54,7 +56,7 @@ const PiMaker = enum(u32) {
     pub fn get_from_revision(revison:u32) PiMaker {
 
         const maker : u32 = (revison & (0x0F << 16)) >> 16 ;
-        std.debug.warn("maker = {}\n", maker);
+        // std.debug.warn("maker = {}\n", maker);
 
         return @intToEnum(PiMaker,maker);
     }
@@ -64,7 +66,8 @@ const PiMaker = enum(u32) {
     }
 };
 
-const PiVersion = enum(u32) {
+//gpio.zenとの間のテストのためpub化させている
+pub const PiVersion = enum(u32) {
     PI_VERSION_1 = 0x0,
     PI_VERSION_1_1,
     PI_VERSION_1_2,
@@ -75,7 +78,7 @@ const PiVersion = enum(u32) {
     pub fn get_from_revision(revison:u32) PiVersion {
 
         const version : u32 = (revison & (0x0F <<  0)) >>  0 ;
-        std.debug.warn("version = {}\n", version);
+        // std.debug.warn("version = {}\n", version);
 
         return @intToEnum(PiVersion,version);
     }
@@ -129,7 +132,7 @@ pub const BoardInfomation = struct {
         const read = try file.read(buffer);
         errdefer heap.free(heap.direct_allocator, buffer);//異常終了の場合はここでメモリ開放
 
-        std.debug.warn("取得した文字列の長さ = {}\n", file.getEndPos());
+        // std.debug.warn("取得した文字列の長さ = {}\n", file.getEndPos());
 
         return read;
 
@@ -189,33 +192,33 @@ pub const BoardInfomation = struct {
         return sumNum;
     }
 };
-test "PiModel" {
-    var rev : u32 = 0xa02082;
+// test "PiModel" {
+//     var rev : u32 = 0xa02082;
 
-    const model = PiModel.get_from_revision(rev);
-    std.testing.equal(model, PiModel.PI_MODEL_3B);
-}
+//     const model = PiModel.get_from_revision(rev);
+//     std.testing.equal(model, PiModel.PI_MODEL_3B);
+// }
 
-test "PiMaker" {
-    var rev : u32 = 0xa02082;
+// test "PiMaker" {
+//     var rev : u32 = 0xa02082;
 
-    const maker = PiMaker.get_from_revision(rev);
-    std.testing.equal(maker, PiMaker.PI_MAKER_SONY_UK);
-}
+//     const maker = PiMaker.get_from_revision(rev);
+//     std.testing.equal(maker, PiMaker.PI_MAKER_SONY_UK);
+// }
 
-test "PiVersion" {
-    var rev : u32 = 0xa02082;
+// test "PiVersion" {
+//     var rev : u32 = 0xa02082;
 
-    const version = PiVersion.get_from_revision(rev);
-    std.testing.equal(version, PiVersion.PI_VERSION_1_2);
+//     const version = PiVersion.get_from_revision(rev);
+//     std.testing.equal(version, PiVersion.PI_VERSION_1_2);
     
-}
+// }
 
-test "BoardInfomation" {
-    const BI = BoardInfomation.init() catch unreachable;
+// test "BoardInfomation" {
+//     const BI = BoardInfomation.init() catch unreachable;
 
-    std.testing.equal(BI.model, PiModel.PI_MODEL_4B);
-    std.testing.equal(BI.maker, PiMaker.PI_MAKER_SONY_UK);
-    std.testing.equal(BI.version, PiVersion.PI_VERSION_1_2);
+//     std.testing.equal(BI.model, PiModel.PI_MODEL_4B);
+//     std.testing.equal(BI.maker, PiMaker.PI_MAKER_SONY_UK);
+//     std.testing.equal(BI.version, PiVersion.PI_VERSION_1_2);
     
-}
+// }
