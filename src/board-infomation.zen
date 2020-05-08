@@ -15,7 +15,7 @@ const os = std.os;
 const is_test = builtin.is_test;
 
 
-const PiModel = enum(u32) {
+pub const PiModel = enum(u32) {
     PI_MODEL_A = 0x0,
     PI_MODEL_B,
     PI_MODEL_AP,
@@ -58,7 +58,7 @@ test "PiModel" {
 }
 
 
-const PiMaker = enum(u32) {
+pub const PiMaker = enum(u32) {
     PI_MAKER_SONY_UK = 0x0,
     PI_MAKER_EGOMAN,
     PI_MAKER_EMBEST,
@@ -95,7 +95,7 @@ test "PiMaker" {
 
 }
 
-const PiVersion = enum(u32) {
+pub const PiVersion = enum(u32) {
     PI_VERSION_1 = 0x0,
     PI_VERSION_1_1,
     PI_VERSION_1_2,
@@ -130,7 +130,7 @@ pub const BoardInfomation = struct {
     pub fn init() anyerror!BoardInfomation {
 
         const cpuinfo = getCpuinfo() catch unreachable;
-        defer heap.free(heap.direct_allocator, cpuinfo); //cpuinfo_read(正常系)のメモリ開放
+        defer heap.free(heap.direct_allocator, cpuinfo); //getCpuinfo(正常系)のメモリ開放
 
         const revisionSlice = getRevisionLine(cpuinfo);//リビジョン情報を取得
         const RevisionNum = revitionSliceToNumber(revisionSlice) ;//リビジョン情報を整数型に変換
@@ -161,6 +161,8 @@ pub const BoardInfomation = struct {
         const file = try fs.File.openRead(CPU_INFO_PATH);
         defer file.close();
 
+        // (TODO)バッファサイズ1500は、根拠がないため今後改善する。
+        // @intCast(usize, try file.getEndPos());では、ファイルサイズ取得に失敗した
         const buf = try heap.alloc(heap.direct_allocator, u8, 1500);
         const cpuinfo = try file.read(buf);
         errdefer heap.free(heap.direct_allocator, cpuinfo);
@@ -195,7 +197,7 @@ pub const BoardInfomation = struct {
 
         } else {
             // If the cpuinfo is passed correctly, it does not come here.
-            std.debug.panic("Please take the cpuinfo file.");
+            std.debug.panic("Don't find 'revision' line in the argument file.");
         };
 
 
@@ -236,7 +238,6 @@ pub const BoardInfomation = struct {
         return number;
     }
 };
-
 
 test "BoardInfomation" {
     const BI = BoardInfomation.init() catch unreachable;

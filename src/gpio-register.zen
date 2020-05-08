@@ -1,0 +1,120 @@
+const std = @import("std");
+const ok = std.testing.ok;
+const testing = std.testing;
+const fs = std.fs;
+const heap = std.heap;
+const Allocator = heap.Allocator;
+const mem = std.mem;
+const math = std.math;
+const os = std.os;
+
+pub const GpioRegister = packed struct {
+    gpfsel0: u32 = 0,
+    gpfsel1: u32 = 0,
+    gpfsel2: u32 = 0,
+    gpfsel3: u32 = 0,
+    gpfsel4: u32 = 0,
+    gpfsel5: u32 = 0,
+
+    reserved0: [4]u8 = [_]u8{0}**4,
+    gpset0: u32 = 0,
+    gpset1: u32 = 0,
+
+    reserved1: [4]u8 = [_]u8{0}**4,
+    gpclr0: u32 = 0,
+    gpclr1: u32 = 0,
+
+    reserved2: [4]u8 = [_]u8{0}**4,
+    gplev0: u32 = 0,
+    gplev1: u32 = 0,
+
+    reserved3: [4]u8 = [_]u8{0}**4,
+    other:[100]u8 =  [_]u8{0}**100,
+
+    var myPtr : []u8 = undefined;
+
+    const OFFSET : u32 = 0x00200000;
+    const BLOCK_SIZE = (4 * 1024);
+
+    const Self = @This();
+
+    // gpioToShift
+    //	Define the shift up for the 3 bits per pin in each GPFSEL port
+    const gpioToShift = [60]u32
+    {
+        0,3,6,9,12,15,18,21,24,27,
+        0,3,6,9,12,15,18,21,24,27,
+        0,3,6,9,12,15,18,21,24,27,
+        0,3,6,9,12,15,18,21,24,27,
+        0,3,6,9,12,15,18,21,24,27,
+        0,3,6,9,12,15,18,21,24,27,
+    } ;
+
+    pub fn get_ptr(baseAddress:usize) !GpioRegister {
+        const fd = try os.open("/dev/mem", os.O_RDWR | os.O_SYNC | os.O_CLOEXEC,  0);
+        errdefer os.close(fd);
+
+        // std.debug.warn("/dev/mem ok\n");
+
+        if ( fd == undefined )std.debug.warn("/dev/mem NG {} \n", fd);
+
+        const bytes = try os.mmap(
+            null,
+            BLOCK_SIZE,
+            os.PROT_READ | os.PROT_WRITE,
+            os.MAP_SHARED,
+            fd,
+            baseAddress + OFFSET,
+        );
+        errdefer os.munmap(bytes);
+
+        // std.debug.warn("mmap ok\n");
+
+        myPtr = bytes;
+
+        return Self{};
+    }
+    pub fn pin_mode(physPin:u32,mode:u32) void {
+        const INPUT = 0;
+        const OUTPUT = 1;
+        const mmap_addr = @bytesToSlice(u32, myPtr);
+        var shift : u32 = gpioToShift[physPin];
+
+        if (mode == INPUT){
+            // std.debug.warn("INPUT {} ok\n",shift);
+            mmap_addr[gpfsel0] = (mmap_addr[gpfsel0] & ~(7 << shift)) ; // Sets bits to zero = input
+        }else if (mode == OUTPUT){
+            // std.debug.warn("OUTPUT {} ok\n",shift);
+            mmap_addr[gpfsel0] = (mmap_addr[gpfsel0] & ~(7 << shift)) | (1 << shift) ;
+        }else{
+        }
+        return;
+    }
+    pub fn reg_set(physPin:u32) void {
+        const mmap_addr = @bytesToSlice(u32, myPtr);
+        // std.debug.warn("reg_set ok\n",);
+        mmap_addr[gpset0] = 1 << (physPin & 31);
+        return;
+    }
+    pub fn reg_clr(physPin:u32) void {
+        const mmap_addr = @bytesToSlice(u32, myPtr);
+        // std.debug.warn("reg_clr ok\n",);
+        mmap_addr[gpclr0] = 1 << (physPin & 31);
+        return;
+    }
+    pub fn reg_lev(physPin:u32) u1 {
+        //どこで使用するか不明なため保留
+    }
+};
+
+// test "GpioRegister" {
+//     const valueMem = GpioRegister.get_ptr(0x3F000000);
+//     if (valueMem) |value| {
+//         GpioRegister.pin_mode(17,1);
+//         GpioRegister.reg_set(17);
+//         GpioRegister.reg_clr(17);
+//     } else |err| {
+
+//     }
+// }
+
