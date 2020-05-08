@@ -51,7 +51,7 @@ pub const GpioRegister = packed struct {
         const fd = try os.open(MEM_PATH, os.O_RDWR | os.O_SYNC | os.O_CLOEXEC,  0);
         errdefer os.close(fd);
 
-        if ( fd == undefined )std.debug.warn("/dev/mem NG\n");
+        if ( fd == undefined )std.debug.warn("/dev/mem NG {} \n", fd);
 
         const bytes = try os.mmap(
             null,
