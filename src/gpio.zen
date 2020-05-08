@@ -8,37 +8,71 @@ const mem = std.mem;
 const math = std.math;
 const os = std.os;
 
-const BoardInfomation = @import("board-infomation.zen");
-const BI = BoardInfomation.BoardInfomation;
-
-const GpioRegister = @import("gpio-register.zen");
-const GR = GpioRegister.GpioRegister;
+const BoardInfomation = @import("board-infomation.zen").BoardInfomation;
+const PiModel = @import("board-infomation.zen").PiModel;
+const GpioRegister = @import("gpio-register.zen").GpioRegister;
 
 pub const Gpio = struct {
-    boardInfo:BI,
-    gpioReg:GR,
+    boardInfo:BoardInfomation,
+    gpioReg:GpioRegister,
     const Self = @This();
 
-    pub fn init() anyerror!Gpio {
+    pub fn init() Gpio {
         return Self{
-            .boardInfo = BI.init() catch unreachable,
-            .gpioReg = GR.get_ptr(0x3F000000) catch unreachable,
+            .boardInfo = BoardInfomation.init() catch unreachable,
+            .gpioReg = GpioRegister.get_ptr(0x3F000000) catch unreachable,
         };
     }
-    pub fn pin_mode(physPin:u32,mode:u32) anyerror!void {
-        GR.pin_mode(physPin,mode);
+    pub fn reg_fsel(self:Self,physPin:u32,mode:u3) void {
+        var shift = (physPin % 10) * 3;
+        std.debug.warn("shift {}.\n",shift);
+
+        var fselNum = (physPin / 10);
+        std.debug.warn("fselNum {}.\n",fselNum);
+
+        if( mode == 0 or mode == 1 ){
+            switch (fselNum) {
+                0 => self.gpioReg.gpfsel0 = self.gpioReg.gpfsel0 & ~(7 << shift) | mode,
+                1 => self.gpioReg.gpfsel1 = self.gpioReg.gpfsel1 & ~(7 << shift) | mode,
+                2 => self.gpioReg.gpfsel2 = self.gpioReg.gpfsel2 & ~(7 << shift) | mode,
+                3 => self.gpioReg.gpfsel3 = self.gpioReg.gpfsel3 & ~(7 << shift) | mode,
+                4 => self.gpioReg.gpfsel4 = self.gpioReg.gpfsel4 & ~(7 << shift) | mode,
+                5 => self.gpioReg.gpfsel5 = self.gpioReg.gpfsel5 & ~(7 << shift) | mode,
+                else => @panic("panic"),
+            }
+        } else {
+            @panic("panic");
+        }
         return;
     }
-    pub fn reg_set(physPin:u32) anyerror!void {
-        GR.reg_set(physPin);
+    pub fn reg_set(self:Self,physPin:u32) void {
+        var fselNum = (physPin / 10);
+        std.debug.warn("fselNum {}.\n",fselNum);
+        switch (fselNum) {
+            0 => self.gpioReg.gpset0  = 1 << 17,
+            1 => self.gpioReg.gpset1  = 1 << physPin,
+            else => @panic("panic"),
+        }
         return;
     }
-    pub fn reg_clr(physPin:u32) anyerror!void {
-        GR.reg_clr(physPin);
+    pub fn reg_clr(self:Self,physPin:u32) void {
+        var fselNum = (physPin / 10);
+        std.debug.warn("fselNum {}.\n",fselNum);
+        switch (fselNum) {
+            0 => self.gpioReg.gpclr0  = 1 << physPin,
+            1 => self.gpioReg.gpclr1  = 1 << physPin,
+            else => @panic("panic"),
+        }
         return;
     }
-    pub fn reg_lev(physPin:u32) anyerror!u1 {
-        //どこで使用するか不明なため保留
+    pub fn reg_lev(self:Self,physPin:u32) u1 {
+        var fselNum = (physPin / 10);
+        std.debug.warn("fselNum {}.\n",fselNum);
+        return switch (fselNum) {
+            0 => self.gpioReg.gplev0,
+            1 => self.gpioReg.gplev1,
+            else => @panic("panic"),
+        };
     }
 };
 
