@@ -40,18 +40,17 @@ pub const GpioRegister = packed struct {
 
     const Self = @This();
 
-    pub fn get_ptr(baseAddress:usize) !GpioRegister {
+    pub fn get_ptr(baseAddress:usize) !*volatile GpioRegister {
         var MEM_PATH : [] const u8 = undefined;
         if( !is_test ) {
             MEM_PATH = "/dev/mem"[0..];
         } else {
             MEM_PATH = "src/test/mem"[0..];
         }
-
         const fd = try os.open(MEM_PATH, os.O_RDWR | os.O_SYNC | os.O_CLOEXEC,  0);
         errdefer os.close(fd);
 
-        if ( fd == undefined )std.debug.warn("/dev/mem NG {} \n", fd);
+        //if ( fd == undefined )std.debug.warn("/dev/mem NG {} \n", fd);
 
         const bytes = try os.mmap(
             null,
@@ -65,18 +64,16 @@ pub const GpioRegister = packed struct {
 
         myPtr = bytes;
 
-        return Self{};
+        return @ptrCast(*volatile GpioRegister,bytes.ptr);
     }
 };
 
-// test "GpioRegister" {
-//     const valueMem = GpioRegister.get_ptr(0x3F000000);
-//     if (valueMem) |value| {
-//         GpioRegister.pin_mode(17,1);
-//         GpioRegister.reg_set(17);
-//         GpioRegister.reg_clr(17);
-//     } else |err| {
-
-//     }
-// }
+test "GpioRegister" {
+    const value = GpioRegister.get_ptr(0x3F000000);
+    if (value) |val| {
+        std.debug.warn("OK , {}\n",val);
+    } else |err| {
+        std.debug.warn("err\n");
+    }
+}
 

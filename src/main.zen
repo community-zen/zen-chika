@@ -5,7 +5,7 @@ const GpioPort = @import("gpio-port.zen").GpioPort;
 const GpioPin = @import("gpio-port.zen").GpioPin;
 const PinMode = @import("gpio-port.zen").PinMode;
 
-pub fn main() anyerror!void {
+pub fn main() void {
 
     // GPIOの初期化
     const gpio = Gpio.init();
