@@ -68,12 +68,12 @@ pub const GpioRegister = packed struct {
     }
 };
 
-test "GpioRegister" {
-    const value = GpioRegister.get_ptr(0x3F000000);
-    if (value) |val| {
-        std.debug.warn("OK , {}\n",val);
-    } else |err| {
-        std.debug.warn("err\n");
-    }
-}
+// test "GpioRegister" {
+//     const value = GpioRegister.get_ptr(0x3F000000);
+//     if (value) |val| {
+//         std.debug.warn("OK , {}\n",val);
+//     } else |err| {
+//         std.debug.warn("err\n");
+//     }
+// }
 

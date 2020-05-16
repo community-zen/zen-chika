@@ -12,16 +12,37 @@ const BoardInfomation = @import("board-infomation.zen").BoardInfomation;
 const PiModel = @import("board-infomation.zen").PiModel;
 const GpioRegister = @import("gpio-register.zen").GpioRegister;
 
+test "GPIO" {
+
+    const gpio = Gpio.init();
+    
+    const gpio2 = Gpio.init();
+
+    std.testing.equal( gpio, gpio2 );
+
+}
+
+
 pub const Gpio = struct {
     boardInfo:BoardInfomation,
     gpioReg: *volatile GpioRegister,
     const Self = @This();
 
+    var once : bool = false;
+    var gpio : Gpio = undefined;
+
     pub fn init() Gpio {
-        return Self{
+
+        if( Self.once == true ) return Self.gpio;
+
+        Self.gpio = Self {
             .boardInfo = BoardInfomation.init(),
-            .gpioReg = GpioRegister.get_ptr(0x3F000000) catch unreachable,
+            .gpioReg = GpioRegister.get_ptr(0xFE000000) catch unreachable,
         };
+        Self.once = true;
+
+        return Self.gpio;
+
     }
     pub fn reg_fsel(self:Self,physPin:u32,mode:u3) void {
         var shift : u5 = @intCast(u5, (physPin % 10) * 3);
@@ -43,10 +64,16 @@ pub const Gpio = struct {
         return;
     }
     pub fn reg_set(self:Self,physPin:u32) void {
-        var fselNum = (physPin / 10);
+        var fselNum = (physPin / 32);
+        std.debug.warn("fselNum {} .\n",fselNum);
         switch (fselNum) {
-            0 => self.gpioReg.gpset0  = @is(u32, 1) << @intCast(u5,physPin),
-            1 => self.gpioReg.gpset1  = @is(u32, 1) << @intCast(u5,physPin),
+            0 => {
+                self.gpioReg.gpset0  = @is(u32, 1) << @intCast(u5,physPin);
+            },
+            1 => {
+                self.gpioReg.gpset1  = @is(u32, 1) << @intCast(u5,physPin);
+                std.debug.warn("3-1 .\n");
+            },
             else => @panic("panic"),
         }
         return;
@@ -62,11 +89,13 @@ pub const Gpio = struct {
     }
     pub fn reg_lev(self:Self,physPin:u32) u1 {
         var fselNum = (physPin / 10);
-        return switch (fselNum) {
-            0 => self.gpioReg.gplev0,
-            1 => self.gpioReg.gplev1,
-            else => @panic("panic"),
-        };
+
+        // return switch (fselNum) {
+        //     0 => self.gpioReg.gplev0,
+        //     1 => self.gpioReg.gplev1,
+        //     else => @panic("panic"),
+        // };
+        return @is(u1, 1);
     }
 };
 

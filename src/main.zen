@@ -7,16 +7,25 @@ const PinMode = @import("gpio-port.zen").PinMode;
 
 pub fn main() void {
 
+    std.debug.warn("0 .\n");
+
     // GPIOの初期化
     const gpio = Gpio.init();
 
+    std.debug.warn("1 .\n");
     // Piの設定
     const led = GpioPort.init(gpio, GpioPin.PIN_0);
 
+    std.debug.warn("2 .\n");
+
     led.pin_mode(PinMode.OUTPUT);
+
+    std.debug.warn("3 .\n");
 
     led.digital_write(1);
     std.time.sleep(1000 * std.time.millisecond);
+
+    std.debug.warn("4 .\n");
 
     led.digital_write(0);
     std.time.sleep(1000 * std.time.millisecond);

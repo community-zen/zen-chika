@@ -124,21 +124,34 @@ pub const BoardInfomation = struct {
     model:PiModel,
     maker:PiMaker,
     version:PiVersion,
+    baseAddress:usize,
 
     const Self = @This();
 
     pub fn init() BoardInfomation {
 
-        const cpuinfo = getCpuinfo();
-        defer heap.free(heap.direct_allocator, cpuinfo); //getCpuinfo(正常系)のメモリ開放
 
-        const revisionSlice = getRevisionLine(cpuinfo);//リビジョン情報を取得
-        const RevisionNum = revitionSliceToNumber(revisionSlice) ;//リビジョン情報を整数型に変換
+        // CPUの情報を取得する
+        const cpuinfo = getCpuinfo();
+        defer heap.free(heap.direct_allocator, cpuinfo);
+
+        // CPU情報からリビジョン情報を取得する
+        const revisionSlice = getRevisionLine(cpuinfo);
+        const revisionNum = revitionSliceToNumber(revisionSlice) ;
+
+        // ラズベリーパイの型番、メーカ、バージョンの取得
+        const model = PiModel.get_from_revision(revisionNum);
+        const maker = PiMaker.get_from_revision(revisionNum);
+        const version = PiVersion.get_from_revision(revisionNum);
+
+        // 型番からレジスタのベースアドレスを取得する
+        const baseAddress = conv_to_base_address_from_model(model);
 
         return Self {
-            .model = PiModel.get_from_revision(RevisionNum),
-            .maker = PiMaker.get_from_revision(RevisionNum),
-            .version = PiVersion.get_from_revision(RevisionNum),
+            .model = model,
+            .maker = maker,
+            .version = version,
+            .baseAddress = baseAddress,
         };
     }
     ///////////////////////////////////////////
@@ -237,13 +250,35 @@ pub const BoardInfomation = struct {
 
         return number;
     }
+    ///////////////////////////////////////////
+    // @brief  型番からベースアドレスを判断する
+    // @note
+    ///////////////////////////////////////////
+    fn conv_to_base_address_from_model(model:PiModel)  usize {
+
+        const GPIO_PERI_BASE_OLD  = 0x20000000;
+        const GPIO_PERI_BASE_2835 = 0x3F000000;
+        const GPIO_PERI_BASE_2711 = 0xFE000000;
+
+        return switch (model) {
+            PiModel.PI_MODEL_A, PiModel.PI_MODEL_B,
+            PiModel.PI_MODEL_AP, PiModel.PI_MODEL_BP,
+            PiModel.PI_MODEL_ALPHA, PiModel.PI_MODEL_CM,
+            PiModel.PI_MODEL_ZERO, PiModel.PI_MODEL_ZERO_W => GPIO_PERI_BASE_OLD ,
+
+            PiModel.PI_MODEL_4B => GPIO_PERI_BASE_2711 ,
+
+            else => GPIO_PERI_BASE_2835,
+        };
+    }
+
 };
 
-// test "BoardInfomation" {
-//     const BI = BoardInfomation.init() catch unreachable;
+test "BoardInfomation" {
+    const BI = BoardInfomation.init();
 
-//     std.testing.equal(BI.model, PiModel.PI_MODEL_3B);
-//     std.testing.equal(BI.maker, PiMaker.PI_MAKER_SONY_JAPAN);
-//     std.testing.equal(BI.version, PiVersion.PI_VERSION_1_2);
+    std.testing.equal(BI.model, PiModel.PI_MODEL_3B);
+    std.testing.equal(BI.maker, PiMaker.PI_MAKER_SONY_JAPAN);
+    std.testing.equal(BI.version, PiVersion.PI_VERSION_1_2);
 
-// }
+}
