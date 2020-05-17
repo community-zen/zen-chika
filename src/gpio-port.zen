@@ -20,10 +20,22 @@ pub const GpioPin = enum(u32) {
     PIN_6 = 25,
     PIN_7 = 4,
 
-    pub fn to_phys_pin(comptime pin:GpioPin) u32 {
+    pub fn to_phys_pin(comptime pin:GpioPin) comptime_int {
         return @enumToInt(pin);
     }
 };
+
+test "GpioPin" {
+    const pin0 = GpioPin.PIN_0;
+    const pin1 = GpioPin.PIN_1;
+    const pin7 = GpioPin.PIN_7;
+
+    comptime {
+        std.testing.equal(17, pin0.to_phys_pin() );
+        std.testing.equal(18, pin1.to_phys_pin() );
+        std.testing.equal(4, pin7.to_phys_pin() );
+    }
+}
 
 pub const PinMode = enum(u3) {
     INPUT = 0,

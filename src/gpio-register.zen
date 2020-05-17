@@ -1,14 +1,8 @@
 const std = @import("std");
-const builtin = @import("builtin");
-const ok = std.testing.ok;
 const testing = std.testing;
-const fs = std.fs;
-const heap = std.heap;
-const Allocator = heap.Allocator;
 const mem = std.mem;
 const math = std.math;
 const os = std.os;
-const is_test = builtin.is_test;
 
 pub const GpioRegister = packed struct {
     gpfsel0: u32 = 0,
@@ -33,24 +27,18 @@ pub const GpioRegister = packed struct {
     reserved3: [4]u8 = [_]u8{0}**4,
     other:[100]u8 =  [_]u8{0}**100,
 
-    var myPtr : []u8 = undefined;
-
+    const Self = @This();
     const OFFSET : u32 = 0x00200000;
     const BLOCK_SIZE = (4 * 1024);
 
-    const Self = @This();
+    // メモリ全体を示す特殊ファイルのパスを指定する
+    var MEM_PATH = "/dev/mem"[0..];
 
-    pub fn get_ptr(baseAddress:usize) !*volatile GpioRegister {
-        var MEM_PATH : [] const u8 = undefined;
-        if( !is_test ) {
-            MEM_PATH = "/dev/mem"[0..];
-        } else {
-            MEM_PATH = "src/test/mem"[0..];
-        }
+    // (TODO)/dev/gpiomemにも対応し、管理者権限が必要ないようにする
+    pub fn get_ptr( baseAddress:usize ) !*volatile GpioRegister {
+
         const fd = try os.open(MEM_PATH, os.O_RDWR | os.O_SYNC | os.O_CLOEXEC,  0);
         errdefer os.close(fd);
-
-        //if ( fd == undefined )std.debug.warn("/dev/mem NG {} \n", fd);
 
         const bytes = try os.mmap(
             null,
@@ -62,18 +50,35 @@ pub const GpioRegister = packed struct {
         );
         errdefer os.munmap(bytes);
 
-        myPtr = bytes;
 
         return @ptrCast(*volatile GpioRegister,bytes.ptr);
     }
 };
 
-// test "GpioRegister" {
-//     const value = GpioRegister.get_ptr(0x3F000000);
-//     if (value) |val| {
-//         std.debug.warn("OK , {}\n",val);
-//     } else |err| {
-//         std.debug.warn("err\n");
-//     }
-// }
+test "GpioRegister" {
+
+    // テスト用のファイルを指定する(仮)
+    GpioRegister.MEM_PATH = "src/test/mem"[0..];
+    const ptr = GpioRegister.get_ptr(0x3F000000) catch {
+        @panic("There was an error in GpioRegister.");
+    };
+    std.testing.ok( @intCast( usize, 0x3F000000+GpioRegister.OFFSET) < @ptrToInt( ptr )  );
+
+    std.testing.equal( @is(usize, 0x00), @byteOffsetOf(GpioRegister, "gpfsel0") );
+    std.testing.equal( @is(usize, 0x04), @byteOffsetOf(GpioRegister, "gpfsel1") );
+    std.testing.equal( @is(usize, 0x08), @byteOffsetOf(GpioRegister, "gpfsel2") );
+    std.testing.equal( @is(usize, 0x0C), @byteOffsetOf(GpioRegister, "gpfsel3") );
+    std.testing.equal( @is(usize, 0x10), @byteOffsetOf(GpioRegister, "gpfsel4") );
+    std.testing.equal( @is(usize, 0x14), @byteOffsetOf(GpioRegister, "gpfsel5") );
+
+    std.testing.equal( @is(usize, 0x1C), @byteOffsetOf(GpioRegister, "gpset0") );
+    std.testing.equal( @is(usize, 0x20), @byteOffsetOf(GpioRegister, "gpset1") );
+
+    std.testing.equal( @is(usize, 0x28), @byteOffsetOf(GpioRegister, "gpclr0") );
+    std.testing.equal( @is(usize, 0x2C), @byteOffsetOf(GpioRegister, "gpclr1") );
+
+    std.testing.equal( @is(usize, 0x34), @byteOffsetOf(GpioRegister, "gplev0") );
+    std.testing.equal( @is(usize, 0x38), @byteOffsetOf(GpioRegister, "gplev1") );
+
+}
 
