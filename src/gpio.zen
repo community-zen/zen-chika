@@ -50,12 +50,12 @@ pub const Gpio = struct {
 
         if( mode == 0 or mode == 1 ){
             switch (fselNum) {
-                0 => self.gpioReg.gpfsel0 = self.gpioReg.gpfsel0 & ~(@is(u32, 7)  << shift) | mode,
-                1 => self.gpioReg.gpfsel1 = self.gpioReg.gpfsel1 & ~(@is(u32, 7)  << shift) | mode,
-                2 => self.gpioReg.gpfsel2 = self.gpioReg.gpfsel2 & ~(@is(u32, 7)  << shift) | mode,
-                3 => self.gpioReg.gpfsel3 = self.gpioReg.gpfsel3 & ~(@is(u32, 7)  << shift) | mode,
-                4 => self.gpioReg.gpfsel4 = self.gpioReg.gpfsel4 & ~(@is(u32, 7)  << shift) | mode,
-                5 => self.gpioReg.gpfsel5 = self.gpioReg.gpfsel5 & ~(@is(u32, 7)  << shift) | mode,
+                0 => self.gpioReg.gpfsel0 = self.gpioReg.gpfsel0 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
+                1 => self.gpioReg.gpfsel1 = self.gpioReg.gpfsel1 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
+                2 => self.gpioReg.gpfsel2 = self.gpioReg.gpfsel2 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
+                3 => self.gpioReg.gpfsel3 = self.gpioReg.gpfsel3 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
+                4 => self.gpioReg.gpfsel4 = self.gpioReg.gpfsel4 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
+                5 => self.gpioReg.gpfsel5 = self.gpioReg.gpfsel5 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
                 else => @panic("panic"),
             }
         } else {
@@ -65,21 +65,19 @@ pub const Gpio = struct {
     }
     pub fn reg_set(self:Self,physPin:u32) void {
         var fselNum = (physPin / 32);
-        std.debug.warn("fselNum {} .\n",fselNum);
         switch (fselNum) {
             0 => {
                 self.gpioReg.gpset0  = @is(u32, 1) << @intCast(u5,physPin);
             },
             1 => {
                 self.gpioReg.gpset1  = @is(u32, 1) << @intCast(u5,physPin);
-                std.debug.warn("3-1 .\n");
             },
             else => @panic("panic"),
         }
         return;
     }
     pub fn reg_clr(self:Self,physPin:u32) void {
-        var fselNum = (physPin / 10);
+        var fselNum = (physPin / 32);
         switch (fselNum) {
             0 => self.gpioReg.gpclr0  = @is(u32, 1) << @intCast(u5,physPin),
             1 => self.gpioReg.gpclr1  = @is(u32, 1) << @intCast(u5,physPin),
@@ -88,7 +86,7 @@ pub const Gpio = struct {
         return;
     }
     pub fn reg_lev(self:Self,physPin:u32) u1 {
-        var fselNum = (physPin / 10);
+        var fselNum = (physPin / 32);
 
         // return switch (fselNum) {
         //     0 => self.gpioReg.gplev0,
