@@ -28,41 +28,16 @@ pub const GpioRegister = packed struct {
     other:[100]u8 =  [_]u8{0}**100,
 
     const Self = @This();
-    const OFFSET : u32 = 0x00200000;
-    const BLOCK_SIZE = (4 * 1024);
+
+    pub const OFFSET : u32 = 0x00200000;
 
     // メモリ全体を示す特殊ファイルのパスを指定する
-    var MEM_PATH = "/dev/mem"[0..];
+    pub const MEM_PATH = "/dev/mem"[0..];
+    pub const GPIOMEM_PATH = "/dev/gpiomem"[0..];
 
-    // (TODO)/dev/gpiomemにも対応し、管理者権限が必要ないようにする
-    pub fn get_ptr( baseAddress:usize ) !*volatile GpioRegister {
-
-        const fd = try os.open(MEM_PATH, os.O_RDWR | os.O_SYNC | os.O_CLOEXEC,  0);
-        errdefer os.close(fd);
-
-        const bytes = try os.mmap(
-            null,
-            BLOCK_SIZE,
-            os.PROT_READ | os.PROT_WRITE,
-            os.MAP_SHARED,
-            fd,
-            baseAddress + OFFSET,
-        );
-        errdefer os.munmap(bytes);
-
-
-        return @ptrCast(*volatile GpioRegister,bytes.ptr);
-    }
 };
 
 test "GpioRegister" {
-
-    // テスト用のファイルを指定する(仮)
-    GpioRegister.MEM_PATH = "src/test/mem"[0..];
-    const ptr = GpioRegister.get_ptr(0x3F000000) catch {
-        @panic("There was an error in GpioRegister.");
-    };
-    std.testing.ok( @intCast( usize, 0x3F000000+GpioRegister.OFFSET) < @ptrToInt( ptr )  );
 
     std.testing.equal( @is(usize, 0x00), @byteOffsetOf(GpioRegister, "gpfsel0") );
     std.testing.equal( @is(usize, 0x04), @byteOffsetOf(GpioRegister, "gpfsel1") );

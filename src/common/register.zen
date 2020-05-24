@@ -1,0 +1,58 @@
+const std = @import("std");
+const os = std.os;
+const mem = std.mem;
+
+pub fn getPtr( comptime T: type, baseAddress: usize ) *volatile T {
+
+    var fd : os.fd_t = undefined;
+
+    // /dev/memにアクセスする。ただし「管理者権限の実行ではない場合」か「その他不可解なエラーが発生した場合」は失敗する.
+    if( os.open(T.MEM_PATH, os.O_RDWR | os.O_SYNC | os.O_CLOEXEC,  0) ) |mem_fd| {
+        fd = mem_fd;
+    } else |err| {
+
+        // 「管理者権限の実行ではない場合」で失敗していた場合は、/dev/gpiomemにアクセスする事で回避できる.
+        if( os.open(T.GPIOMEM_PATH, os.O_RDWR | os.O_SYNC | os.O_CLOEXEC,  0)) |gpio_mem_fd| {
+            fd = gpio_mem_fd;
+        } else |er| {
+            std.debug.panic("Failed to get a register pointer.\n");
+        }
+
+    }
+    errdefer os.close(fd);
+
+    const BLOCK_SIZE = (4 * 1024);
+    const bytes = os.mmap(
+        null,
+        BLOCK_SIZE,
+        os.PROT_READ | os.PROT_WRITE,
+        os.MAP_SHARED,
+        fd,
+        baseAddress + T.OFFSET,
+    ) catch |err| {
+
+        std.debug.panic("Failed to get a register pointer.\n");
+
+    };
+    errdefer os.munmap(bytes);
+
+    return @ptrCast(*volatile T, bytes.ptr);
+
+}
+
+const TestReg = struct {
+    reg1: u32 = 0,
+    reg2: u32 = 1,
+
+    const OFFSET : u32 = 0x00200000;
+    const MEM_PATH = "src/test/mem"[0..];
+    const GPIOMEM_PATH = "src/test/gpiomem"[0..];
+
+};
+
+test "getPtr" {
+
+    const ptr = getPtr( TestReg, 0x3F000000 );
+    std.testing.ok( @intCast( usize, 0x3F000000+TestReg.OFFSET) < @ptrToInt( ptr )  );
+
+}

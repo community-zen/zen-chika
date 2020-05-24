@@ -11,11 +11,12 @@ const os = std.os;
 const BoardInfomation = @import("board-infomation.zen").BoardInfomation;
 const PiModel = @import("board-infomation.zen").PiModel;
 const GpioRegister = @import("gpio-register.zen").GpioRegister;
+const Register = @import("common/register.zen");
 
 test "GPIO" {
 
     const gpio = Gpio.init();
-    
+
     const gpio2 = Gpio.init();
 
     std.testing.equal( gpio, gpio2 );
@@ -37,7 +38,8 @@ pub const Gpio = struct {
 
         Self.gpio = Self {
             .boardInfo = BoardInfomation.init(),
-            .gpioReg = GpioRegister.get_ptr(0xFE000000) catch unreachable,
+            // .gpioReg = GpioRegister.get_ptr(0xFE000000) catch unreachable,
+            .gpioReg = Register.getPtr( GpioRegister, 0x3F000000),
         };
         Self.once = true;
 
