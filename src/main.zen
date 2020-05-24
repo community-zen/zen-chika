@@ -21,8 +21,15 @@ pub fn main() void {
     led.digital_write(0);
     std.time.sleep(1000 * std.time.millisecond);
 
-    // var result:u1 = led.digital_read();    //仮想Pin0の状態を取得
-    // std.debug.warn("read result {}.\n",result);
+    // GPIOの初期化
+    const gpio2 = Gpio.init();
+    // Piの設定
+    const led2 = GpioPort.init(gpio2, GpioPin.PIN_1);
+
+    led2.pin_mode(PinMode.INPUT);
+
+    var result:u1 = led2.digital_Read();    //仮想Pin0の状態を取得
+    std.debug.warn("read result {}.\n",result);
 }
 
 test "main"{
