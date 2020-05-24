@@ -1,10 +1,7 @@
 const std = @import("std");
 const ok = std.testing.ok;
 const testing = std.testing;
-const fs = std.fs;
 const heap = std.heap;
-const Allocator = heap.Allocator;
-const mem = std.mem;
 const math = std.math;
 const os = std.os;
 
@@ -12,15 +9,6 @@ const BoardInfomation = @import("board-infomation.zen").BoardInfomation;
 const PiModel = @import("board-infomation.zen").PiModel;
 const GpioRegister = @import("gpio-register.zen").GpioRegister;
 
-test "GPIO" {
-
-    const gpio = Gpio.init();
-    
-    const gpio2 = Gpio.init();
-
-    std.testing.equal( gpio, gpio2 );
-
-}
 
 
 pub const Gpio = struct {
@@ -31,69 +19,117 @@ pub const Gpio = struct {
     var once : bool = false;
     var gpio : Gpio = undefined;
 
+    const registerBitWidth : u5 = 31;
+
+    ///////////////////////////////////////////
+    // @brief  Gpioコントローラを生成する
+    // @note
+    //   gpioを使う際は必ず生成してください
+    //   なお、Gpioはシングルトンだよ。
+    ///////////////////////////////////////////
     pub fn init() Gpio {
 
+        // シングルトンとして実行する
         if( Self.once == true ) return Self.gpio;
 
+        // 「bordInfo」で、ボード情報を元にペリフェラルベースアドレスを求めたのち、
+        // 「gpioReg」より、gpioレジスタの先頭アドレスを取得する。
+        const boardInfo = BoardInfomation.init();
+        const gpioReg = GpioRegister.get_ptr(boardInfo.baseAddress) catch unreachable;
+
         Self.gpio = Self {
-            .boardInfo = BoardInfomation.init(),
-            .gpioReg = GpioRegister.get_ptr(0xFE000000) catch unreachable,
+            .boardInfo = boardInfo,
+            .gpioReg = gpioReg,
         };
         Self.once = true;
 
         return Self.gpio;
 
     }
-    pub fn reg_fsel(self:Self,physPin:u32,mode:u3) void {
-        var shift : u5 = @intCast(u5, (physPin % 10) * 3);
-        var fselNum = (physPin / 10);
 
-        if( mode == 0 or mode == 1 ){
-            switch (fselNum) {
-                0 => self.gpioReg.gpfsel0 = self.gpioReg.gpfsel0 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
-                1 => self.gpioReg.gpfsel1 = self.gpioReg.gpfsel1 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
-                2 => self.gpioReg.gpfsel2 = self.gpioReg.gpfsel2 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
-                3 => self.gpioReg.gpfsel3 = self.gpioReg.gpfsel3 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
-                4 => self.gpioReg.gpfsel4 = self.gpioReg.gpfsel4 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
-                5 => self.gpioReg.gpfsel5 = self.gpioReg.gpfsel5 & ~(@is(u32, 7)  << shift) | (@intCast(u32,mode) << shift),
-                else => @panic("panic"),
-            }
-        } else {
-            @panic("panic");
-        }
-        return;
-    }
-    pub fn reg_set(self:Self,physPin:u32) void {
-        var fselNum = (physPin / 32);
-        switch (fselNum) {
-            0 => {
-                self.gpioReg.gpset0  = @is(u32, 1) << @intCast(u5,physPin);
-            },
-            1 => {
-                self.gpioReg.gpset1  = @is(u32, 1) << @intCast(u5,physPin);
-            },
-            else => @panic("panic"),
-        }
-        return;
-    }
-    pub fn reg_clr(self:Self,physPin:u32) void {
-        var fselNum = (physPin / 32);
-        switch (fselNum) {
-            0 => self.gpioReg.gpclr0  = @is(u32, 1) << @intCast(u5,physPin),
-            1 => self.gpioReg.gpclr1  = @is(u32, 1) << @intCast(u5,physPin),
-            else => @panic("panic"),
-        }
-        return;
-    }
-    pub fn reg_lev(self:Self,physPin:u32) u1 {
-        var fselNum = (physPin / 32);
+    ///////////////////////////////////////////
+    // @brief  
+    // @note
+    //   
+    ///////////////////////////////////////////
+    pub fn reg_fsel( self:Self, bcmPin:u5, mode:u3 ) void {
 
-        // return switch (fselNum) {
-        //     0 => self.gpioReg.gplev0,
-        //     1 => self.gpioReg.gplev1,
-        //     else => @panic("panic"),
-        // };
-        return @is(u1, 1);
+        if( mode > 1 ){std.debug.panic("panic");}
+
+        // GPIO毎に設定するべきFSELレジスタを求める
+        const chooseFsel = (bcmPin / 10);
+        var fsel = switch (chooseFsel) {
+            0 => &self.gpioReg.gpfsel0,
+            1 => &self.gpioReg.gpfsel1,
+            2 => &self.gpioReg.gpfsel2,
+            3 => &self.gpioReg.gpfsel3,
+            4 => &self.gpioReg.gpfsel4,
+            5 => &self.gpioReg.gpfsel5,
+            else => std.debug.panic("panic"),
+        };
+
+        const shift : u5 = @mod(bcmPin, 10) * 3;
+        const threeBitMask = ~(@is(u32, 7)  << shift);
+        const modeMask = @intCast(u32,mode) << shift;
+
+        fsel.* = fsel.* & threeBitMask | modeMask;
+    }
+
+    ///////////////////////////////////////////
+    // @brief  
+    // @note
+    //   
+    ///////////////////////////////////////////
+    pub fn reg_set(self:Self,bcmPin:u5) void {
+        var chooseSet = (bcmPin / registerBitWidth);
+        
+        var set = switch (chooseSet) {
+            0 => &self.gpioReg.gpset0,
+            1 => &self.gpioReg.gpset1,
+            else => std.debug.panic("panic"),
+        };
+        
+        set.* = @is(u32, 1) << bcmPin;
+    }
+
+    ///////////////////////////////////////////
+    // @brief  
+    // @note
+    //   
+    ///////////////////////////////////////////
+    pub fn reg_clr(self:Self,bcmPin:u5) void {
+        var chooseClr = (bcmPin / registerBitWidth);
+        
+        var clr = switch (chooseClr) {
+            0 => &self.gpioReg.gpclr0,
+            1 => &self.gpioReg.gpclr1,
+            else => std.debug.panic("panic"),
+        };
+
+        clr.* = @is(u32, 1) << bcmPin;
+    }
+
+    ///////////////////////////////////////////
+    // @brief  
+    // @note
+    //   
+    ///////////////////////////////////////////
+    pub fn reg_lev(self:Self, bcmPin:u5) u1 {
+        var chooseLev = (bcmPin / registerBitWidth);
+
+        // データが入っているレジスタを求める。
+        var lev = switch (chooseLev) {
+            0 => self.gpioReg.gplev0 ,
+            1 => self.gpioReg.gplev1 ,
+            else => std.debug.panic("panic"),
+        };
+
+        // レジスタからデータを取得する。
+        return if(lev & (@is(u32, 1) << bcmPin) != 0)
+            @is(u1, 1)
+        else
+            @is(u1, 0);
+
     }
 };
 

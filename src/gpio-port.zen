@@ -10,7 +10,7 @@ const os = std.os;
 
 const Gpio = @import("gpio.zen").Gpio;
 
-pub const GpioPin = enum(u32) {
+pub const GpioPin = enum(u5) {
     PIN_0 = 17,
     PIN_1 = 18,
     PIN_2 = 21,
@@ -20,7 +20,7 @@ pub const GpioPin = enum(u32) {
     PIN_6 = 25,
     PIN_7 = 4,
 
-    pub fn to_phys_pin(comptime pin:GpioPin) comptime_int {
+    pub fn to_bcm_pin(comptime pin:GpioPin) comptime_int {
         return @enumToInt(pin);
     }
 };
@@ -31,9 +31,9 @@ test "GpioPin" {
     const pin7 = GpioPin.PIN_7;
 
     comptime {
-        std.testing.equal(17, pin0.to_phys_pin() );
-        std.testing.equal(18, pin1.to_phys_pin() );
-        std.testing.equal(4, pin7.to_phys_pin() );
+        std.testing.equal(17, pin0.to_bcm_pin() );
+        std.testing.equal(18, pin1.to_bcm_pin() );
+        std.testing.equal(4, pin7.to_bcm_pin() );
     }
 }
 
@@ -45,31 +45,30 @@ pub const PinMode = enum(u3) {
 pub const GpioPort = struct {
     pin:GpioPin,
     gpio:Gpio,
-    physPin:u32,
+    bcmPin:u5,
     const Self = @This();
 
     pub fn init(gpio:Gpio,pin:GpioPin) GpioPort {
-        // const physical = pin.to_phys_pin();
         return Self{
             .pin = pin,
             .gpio = gpio,
-            .physPin = @enumToInt(pin),
+            .bcmPin = @enumToInt(pin),
         };
     }
     pub fn pin_mode(self:Self,mode:PinMode) void {
-        self.gpio.reg_fsel(self.physPin,@enumToInt(mode));
+        self.gpio.reg_fsel(self.bcmPin,@enumToInt(mode));
         return;
     }
     pub fn digital_write(self:Self,value:u1) void {
         switch (value) {
-            0 => self.gpio.reg_clr(self.physPin),
-            1 => self.gpio.reg_set(self.physPin),
-            else => @panic("panic"),
+            0 => self.gpio.reg_clr(self.bcmPin),
+            1 => self.gpio.reg_set(self.bcmPin),
+            else => std.debug.panic("panic"),
         }
         return;
     }
-    pub fn digital_Read(self:Self,virPin:GpioPin) u1 {
-        return self.gpio.reg_lev(self.physPin);
+    pub fn digital_Read(self:Self) u1 {
+        return self.gpio.reg_lev(self.bcmPin);
     }
 };
 

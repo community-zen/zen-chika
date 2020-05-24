@@ -33,12 +33,19 @@ pub const GpioRegister = packed struct {
 
     // メモリ全体を示す特殊ファイルのパスを指定する
     var MEM_PATH = "/dev/mem"[0..];
+    var GPIOMEM_PATH = "/dev/gpiomem"[0..];
 
-    // (TODO)/dev/gpiomemにも対応し、管理者権限が必要ないようにする
+
     pub fn get_ptr( baseAddress:usize ) !*volatile GpioRegister {
 
-        const fd = try os.open(MEM_PATH, os.O_RDWR | os.O_SYNC | os.O_CLOEXEC,  0);
-        errdefer os.close(fd);
+        // (TODO)/dev/gpiomemへの暫定対応になっている為、見直しが必要
+        var fd_errorUnion = os.open(MEM_PATH, os.O_RDWR | os.O_SYNC | os.O_CLOEXEC,  0);
+        var fd : c_int = undefined;
+        if(fd_errorUnion)|value|{
+            fd = value;
+        }else |err|{
+            fd = try os.open(GPIOMEM_PATH, os.O_RDWR | os.O_SYNC | os.O_CLOEXEC,  0);
+        }
 
         const bytes = try os.mmap(
             null,
@@ -60,9 +67,24 @@ test "GpioRegister" {
     // テスト用のファイルを指定する(仮)
     GpioRegister.MEM_PATH = "src/test/mem"[0..];
     const ptr = GpioRegister.get_ptr(0x3F000000) catch {
-        @panic("There was an error in GpioRegister.");
+        std.debug.panic("There was an error in GpioRegister.");
     };
     std.testing.ok( @intCast( usize, 0x3F000000+GpioRegister.OFFSET) < @ptrToInt( ptr )  );
+
+
+    GpioRegister.MEM_PATH = "NG"[0..];
+    GpioRegister.GPIOMEM_PATH = "src/test/gpiomem"[0..];
+    const ptr1 = GpioRegister.get_ptr(0x3F000000) catch {
+        std.debug.panic("There was an error in GpioRegister.");
+    };
+    std.testing.ok( @intCast( usize, 0x3F000000+GpioRegister.OFFSET) < @ptrToInt( ptr1 )  );
+
+    GpioRegister.MEM_PATH = "NG"[0..];
+    GpioRegister.GPIOMEM_PATH = "NG"[0..];
+    const ptr2 = GpioRegister.get_ptr(0x3F000000) catch {
+        std.debug.panic("There was an error in GpioRegister.");
+    };
+    std.testing.ok( @intCast( usize, 0x3F000000+GpioRegister.OFFSET) < @ptrToInt( ptr2 )  );
 
     std.testing.equal( @is(usize, 0x00), @byteOffsetOf(GpioRegister, "gpfsel0") );
     std.testing.equal( @is(usize, 0x04), @byteOffsetOf(GpioRegister, "gpfsel1") );
