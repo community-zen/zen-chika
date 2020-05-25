@@ -1,13 +1,4 @@
 const std = @import("std");
-const ok = std.testing.ok;
-const testing = std.testing;
-const fs = std.fs;
-const heap = std.heap;
-const Allocator = heap.Allocator;
-const mem = std.mem;
-const math = std.math;
-const os = std.os;
-
 const Gpio = @import("gpio.zen").Gpio;
 
 pub const GpioPin = enum(u5) {
@@ -48,31 +39,78 @@ pub const GpioPort = struct {
     bcmPin:u5,
     const Self = @This();
 
-    pub fn init(gpio:Gpio,pin:GpioPin) GpioPort {
+    pub fn init( gpio:Gpio, comptime gpioPin:GpioPin ) GpioPort {
+
         return Self{
-            .pin = pin,
+            .pin = gpioPin,
             .gpio = gpio,
-            .bcmPin = @enumToInt(pin),
+            .bcmPin = gpioPin.to_bcm_pin(),
         };
     }
-    pub fn pin_mode(self:Self,mode:PinMode) void {
-        self.gpio.reg_fsel(self.bcmPin,@enumToInt(mode));
-        return;
+    pub fn pin_mode( self:Self, comptime mode:PinMode ) void {
+        self.gpio.reg_fsel( self.bcmPin, @enumToInt(mode) );
     }
-    pub fn digital_write(self:Self,value:u1) void {
+    pub fn digital_write( self:Self, value:u1 ) void {
         switch (value) {
             0 => self.gpio.reg_clr(self.bcmPin),
             1 => self.gpio.reg_set(self.bcmPin),
             else => std.debug.panic("panic"),
         }
-        return;
     }
-    pub fn digital_Read(self:Self) u1 {
+    pub fn digital_Read( self:Self ) u1 {
         return self.gpio.reg_lev(self.bcmPin);
     }
 };
 
-// test "GpioPort" {
-//     const gpioPort = GpioPort.init();
-// }
+
+test "GpioPort" {
+
+    const BoardInfomation = @import("board-infomation.zen").BoardInfomation;
+    const PiModel = @import("board-infomation.zen").PiModel;
+    const PiMaker = @import("board-infomation.zen").PiMaker;
+    const PiVersion = @import("board-infomation.zen").PiVersion;
+    const GpioRegister = @import("gpio-register.zen").GpioRegister;
+
+    var gpioRegister = GpioRegister{};
+    var boardInfomation = BoardInfomation{
+        .model = PiModel.PI_MODEL_3B,
+        .maker = PiMaker.PI_MAKER_SONY_JAPAN,
+        .version = PiVersion.PI_VERSION_1_2,
+        .baseAddress = 0x3F000000,
+    };
+
+    var gpio = Gpio{
+        .boardInfo = boardInfomation,
+        .gpioReg = &gpioRegister,
+    };
+
+    var output = GpioPort.init(gpio, GpioPin.PIN_0);
+
+    output.pin_mode(PinMode.OUTPUT);
+    std.testing.equal( @is(u32, 1) << 21, gpio.gpioReg.gpfsel1 );
+
+    output.digital_write(1);
+    std.testing.equal( @is(u32, 1) << 17, gpio.gpioReg.gpset0 );
+
+    output.digital_write(0);
+    std.testing.equal( @is(u32, 1) << 17, gpio.gpioReg.gpclr0 );
+
+    // output.digital_write(2);
+    // output.digital_write(-1);
+
+    var input = GpioPort.init(gpio, GpioPin.PIN_1);
+
+    input.pin_mode(PinMode.INPUT);
+
+    const off = input.digital_Read();
+    std.testing.equal( @is(u1, 0), off );
+
+    // レジスタにON入力を設定する
+    gpio.gpioReg.gplev0 = @is(u32, 1) << 18;
+
+    const on = input.digital_Read();
+    std.testing.equal( @is(u1, 1), on );
+
+
+}
 
