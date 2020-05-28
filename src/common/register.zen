@@ -1,6 +1,11 @@
+///////////////////////////////////////////
+// @brief  レジスタに対して書き込み処理を行う
+// @note
+//   gpioから受けた書き込み指示に沿ってレジスタへの書き込み処理を行う
+///////////////////////////////////////////
+
 const std = @import("std");
 const os = std.os;
-const mem = std.mem;
 
 pub fn getPtr( comptime T: type, baseAddress: usize ) *volatile T {
 
@@ -50,9 +55,9 @@ const TestReg = struct {
 
 };
 
-test "getPtr" {
+// test "getPtr" {
 
-    const ptr = getPtr( TestReg, 0x3F000000 );
-    std.testing.ok( @intCast( usize, 0x3F000000+TestReg.OFFSET) < @ptrToInt( ptr )  );
+//     const ptr = getPtr( TestReg, 0x3F000000 );
+//     std.testing.ok( @intCast( usize, 0x3F000000+TestReg.OFFSET) < @ptrToInt( ptr )  );
 
-}
+// }

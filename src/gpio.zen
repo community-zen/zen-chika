@@ -1,16 +1,15 @@
+///////////////////////////////////////////
+// @brief  レジスタへの書き込みを管理
+// @note
+//   gpio-portから指示を受け、registerに書き込み指示を出す
+///////////////////////////////////////////
+
 const std = @import("std");
-const ok = std.testing.ok;
-const testing = std.testing;
-const heap = std.heap;
-const math = std.math;
-const os = std.os;
 
 const BoardInfomation = @import("board-infomation.zen").BoardInfomation;
 const PiModel = @import("board-infomation.zen").PiModel;
 const GpioRegister = @import("gpio-register.zen").GpioRegister;
 const Register = @import("common/register.zen");
-
-
 
 pub const Gpio = struct {
     boardInfo:BoardInfomation,
@@ -23,10 +22,10 @@ pub const Gpio = struct {
     const registerBitWidth : u5 = 31;
 
     ///////////////////////////////////////////
-    // @brief  Gpioコントローラを生成する
+    // @brief  初期化処理
     // @note
-    //   gpioを使う際は必ず生成してください
-    //   なお、Gpioはシングルトンだよ。
+    //   Gpioコントローラを生成する
+    //   gpioを使う際は必ず生成してください。なお、Gpioはシングルトンだよ。
     ///////////////////////////////////////////
     pub fn init() Gpio {
 
@@ -49,13 +48,14 @@ pub const Gpio = struct {
     }
 
     ///////////////////////////////////////////
-    // @brief
+    // @brief  Pinモードを設定する
     // @note
-    //
+    //   ユーザーが指定したピンを指定したモードに設定する
+    //   ※INPUT,OUTPUTのみ対応
     ///////////////////////////////////////////
     pub fn reg_fsel( self:Self, bcmPin:u5, mode:u3 ) void {
 
-        if( mode > 1 ){std.debug.panic("panic");}
+        if( mode > 1 ){std.debug.panic("The mode value is abnormal. Expecting INPUT or OUTPUT.");}
 
         // GPIO毎に設定するべきFSELレジスタを求める
         const chooseFsel = (bcmPin / 10);
@@ -66,7 +66,7 @@ pub const Gpio = struct {
             3 => &self.gpioReg.gpfsel3,
             4 => &self.gpioReg.gpfsel4,
             5 => &self.gpioReg.gpfsel5,
-            else => std.debug.panic("panic"),
+            else => std.debug.panic("The FSEL register is abnormal. Check the bcmPin number."),
         };
 
         const shift : u5 = @mod(bcmPin, 10) * 3;
@@ -77,9 +77,9 @@ pub const Gpio = struct {
     }
 
     ///////////////////////////////////////////
-    // @brief
+    // @brief  Setレジスタに対する書き込みを行う
     // @note
-    //
+    //   対象のPinに対応するレジスタを判断する
     ///////////////////////////////////////////
     pub fn reg_set(self:Self,bcmPin:u5) void {
         var chooseSet = (bcmPin / registerBitWidth);
@@ -87,16 +87,16 @@ pub const Gpio = struct {
         var set = switch (chooseSet) {
             0 => &self.gpioReg.gpset0,
             1 => &self.gpioReg.gpset1,
-            else => std.debug.panic("panic"),
+            else => std.debug.panic("The SET register is abnormal. Check the bcmPin number."),
         };
 
         set.* = @is(u32, 1) << bcmPin;
     }
 
     ///////////////////////////////////////////
-    // @brief
+    // @brief  Clrレジスタに対する書き込みを行う
     // @note
-    //
+    //   対象のPinに対応するレジスタを判断する
     ///////////////////////////////////////////
     pub fn reg_clr(self:Self,bcmPin:u5) void {
         var chooseClr = (bcmPin / registerBitWidth);
@@ -104,16 +104,16 @@ pub const Gpio = struct {
         var clr = switch (chooseClr) {
             0 => &self.gpioReg.gpclr0,
             1 => &self.gpioReg.gpclr1,
-            else => std.debug.panic("panic"),
+            else => std.debug.panic("The CLR register is abnormal. Check the bcmPin number."),
         };
 
         clr.* = @is(u32, 1) << bcmPin;
     }
 
     ///////////////////////////////////////////
-    // @brief
+    // @brief  Levレジスタから読み込みを行う
     // @note
-    //
+    //   対象のPinに対応するレジスタを判断する
     ///////////////////////////////////////////
     pub fn reg_lev(self:Self, bcmPin:u5) u1 {
         var chooseLev = (bcmPin / registerBitWidth);
@@ -122,7 +122,7 @@ pub const Gpio = struct {
         var lev = switch (chooseLev) {
             0 => self.gpioReg.gplev0 ,
             1 => self.gpioReg.gplev1 ,
-            else => std.debug.panic("panic"),
+            else => std.debug.panic("The LEV register is abnormal. Check the bcmPin number."),
         };
 
         // レジスタからデータを取得する。

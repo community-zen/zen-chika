@@ -1,19 +1,16 @@
-//
-// Raspberry Piのボード情報を取得するための実装である
-// 参考 : https://www.raspberrypi.org/documentation/hardware/raspberrypi/revision-codes/README.md
-//
-// @package zen-chika
-//
+///////////////////////////////////////////
+// @brief  Raspberry Piボード情報を管理する
+// @note
+//   ファイルシステムから各種情報を取得
+///////////////////////////////////////////
 
 const std = @import("std");
 const builtin = @import("builtin");
+const is_test = builtin.is_test;
 const fs = std.fs;
 const heap = std.heap;
 const mem = std.mem;
 const math = std.math;
-const os = std.os;
-const is_test = builtin.is_test;
-
 
 pub const PiModel = enum(u32) {
     PI_MODEL_A = 0x0,
@@ -36,27 +33,25 @@ pub const PiModel = enum(u32) {
     PI_MODEL_4B,
     PI_MODEL_UNKNOWN,
 
+    ///////////////////////////////////////////
+    // @brief  モデル情報を取得
+    // @note
+    //   リビジョン情報からモデルを判断し返す
+    ///////////////////////////////////////////
     pub fn get_from_revision(revison:u32) PiModel {
         const model : u32 = (revison & (0xFF <<  4)) >>  4 ;
         return @intToEnum(PiModel,model);
     }
 
+    ///////////////////////////////////////////
+    // @brief  モデル情報を文字列として取得
+    // @note
+    //   リビジョン情報からモデル名を文字列として判断し返す
+    ///////////////////////////////////////////
     pub fn get_names(comptime model: PiModel) []const u8 {
         return @tagName(model);
     }
 };
-
-test "PiModel" {
-
-    std.testing.equal(PiModel.PI_MODEL_AP, PiModel.get_from_revision(0x900021));
-    std.testing.equal(PiModel.PI_MODEL_ZERO, PiModel.get_from_revision(0x920092));
-    std.testing.equal(PiModel.PI_MODEL_2B, PiModel.get_from_revision(0xa22042));
-    std.testing.equal(PiModel.PI_MODEL_3B, PiModel.get_from_revision(0xa02082));
-    std.testing.equal(PiModel.PI_MODEL_4B, PiModel.get_from_revision(0xc03112));
-
-    std.testing.equal("PI_MODEL_3B"[0..], PiModel.get_names(PiModel.PI_MODEL_3B));
-}
-
 
 pub const PiMaker = enum(u32) {
     PI_MAKER_SONY_UK = 0x0,
@@ -66,6 +61,11 @@ pub const PiMaker = enum(u32) {
     PI_MAKER_STADIUM,
     PI_MAKER_UNKNOWN,
 
+    ///////////////////////////////////////////
+    // @brief  メーカー情報を取得
+    // @note
+    //   リビジョン情報からメーカーを判断し返す
+    ///////////////////////////////////////////
     pub fn get_from_revision(revison:u32) PiMaker {
         const maker : u32 = (revison & (0x0F << 16)) >> 16 ;
 
@@ -80,20 +80,15 @@ pub const PiMaker = enum(u32) {
         };
     }
 
+    ///////////////////////////////////////////
+    // @brief  メーカー情報を文字列として取得
+    // @note
+    //   リビジョン情報からメーカー情報を文字列として判断し返す
+    ///////////////////////////////////////////
     pub fn get_names(comptime maker: PiMaker) []const u8 {
         return @tagName(maker);
     }
 };
-
-test "PiMaker" {
-
-    std.testing.equal(PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision(0x900021));
-    std.testing.equal(PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision(0x920092));
-    std.testing.equal(PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision(0xa21041));
-    std.testing.equal(PiMaker.PI_MAKER_SONY_JAPAN, PiMaker.get_from_revision(0xa32082));
-    std.testing.equal(PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision(0xc03112));
-
-}
 
 pub const PiVersion = enum(u32) {
     PI_VERSION_1 = 0x0,
@@ -103,21 +98,25 @@ pub const PiVersion = enum(u32) {
     PI_VERSION_2,
     PI_VERSION_UNKNOWN,
 
+    ///////////////////////////////////////////
+    // @brief  バージョン情報を取得
+    // @note
+    //   リビジョン情報からバージョンを判断し返す
+    ///////////////////////////////////////////
     pub fn get_from_revision(revison:u32) PiVersion {
         const version : u32 = (revison & (0x0F <<  0)) >>  0 ;
         return @intToEnum(PiVersion,version);
     }
 
+    ///////////////////////////////////////////
+    // @brief  バージョン情報を文字列として取得
+    // @note
+    //   リビジョン情報からバージョン情報を文字列として判断し返す
+    ///////////////////////////////////////////
     pub fn get_names(comptime version: PiMaker) []const u8 {
         return @tagName(version);
     }
 };
-
-test "PiVersion" {
-
-    std.testing.equal(PiVersion.PI_VERSION_1_2, PiVersion.get_from_revision(0xa02082));
-
-}
 
 pub const BoardInfomation = struct {
 
@@ -128,6 +127,11 @@ pub const BoardInfomation = struct {
 
     const Self = @This();
 
+    ///////////////////////////////////////////
+    // @brief  初期化処理
+    // @note
+    //   ファイルシステムから各種情報を取得する
+    ///////////////////////////////////////////
     pub fn init() BoardInfomation {
 
 
@@ -274,11 +278,37 @@ pub const BoardInfomation = struct {
 
 };
 
-test "BoardInfomation" {
-    const BI = BoardInfomation.init();
+// test "PiModel" {
 
-    std.testing.equal(BI.model, PiModel.PI_MODEL_3B);
-    std.testing.equal(BI.maker, PiMaker.PI_MAKER_SONY_JAPAN);
-    std.testing.equal(BI.version, PiVersion.PI_VERSION_1_2);
+//     std.testing.equal(PiModel.PI_MODEL_AP, PiModel.get_from_revision(0x900021));
+//     std.testing.equal(PiModel.PI_MODEL_ZERO, PiModel.get_from_revision(0x920092));
+//     std.testing.equal(PiModel.PI_MODEL_2B, PiModel.get_from_revision(0xa22042));
+//     std.testing.equal(PiModel.PI_MODEL_3B, PiModel.get_from_revision(0xa02082));
+//     std.testing.equal(PiModel.PI_MODEL_4B, PiModel.get_from_revision(0xc03112));
 
-}
+//     std.testing.equal("PI_MODEL_3B"[0..], PiModel.get_names(PiModel.PI_MODEL_3B));
+// }
+// test "PiMaker" {
+
+//     std.testing.equal(PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision(0x900021));
+//     std.testing.equal(PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision(0x920092));
+//     std.testing.equal(PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision(0xa21041));
+//     std.testing.equal(PiMaker.PI_MAKER_SONY_JAPAN, PiMaker.get_from_revision(0xa32082));
+//     std.testing.equal(PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision(0xc03112));
+
+// }
+
+// test "PiVersion" {
+
+//     std.testing.equal(PiVersion.PI_VERSION_1_2, PiVersion.get_from_revision(0xa02082));
+
+// }
+
+// test "BoardInfomation" {
+//     const BI = BoardInfomation.init();
+
+//     std.testing.equal(BI.model, PiModel.PI_MODEL_3B);
+//     std.testing.equal(BI.maker, PiMaker.PI_MAKER_SONY_JAPAN);
+//     std.testing.equal(BI.version, PiVersion.PI_VERSION_1_2);
+
+// }

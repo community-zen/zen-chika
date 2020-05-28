@@ -1,8 +1,11 @@
+///////////////////////////////////////////
+// @brief  レジスタに対して書き込み処理を行う
+// @note
+//   gpioから受けた書き込み指示に沿ってレジスタへの書き込み処理を行う
+///////////////////////////////////////////
+
 const std = @import("std");
 const testing = std.testing;
-const mem = std.mem;
-const math = std.math;
-const os = std.os;
 
 pub const GpioRegister = packed struct {
     gpfsel0: u32 = 0,
