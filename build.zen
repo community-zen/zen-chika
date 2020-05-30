@@ -1,9 +1,17 @@
-const Builder = @import("std").build.Builder;
+const std = @import("std");
+const Builder = std.build.Builder;
+const Target = std.build.Target;
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *Builder) !void {
     const mode = b.standardReleaseOptions();
-    const exe = b.addExecutable("zen-chika", "src/main.zen");
+    const exe = b.addExecutable("zen-chika", "main.zen");
     exe.setBuildMode(mode);
+
+    const target = try Target.parse("armv7-linux-gnueabihf");
+    exe.setTheTarget(target);
+
+    exe.setOutputDir("./");
+
     exe.install();
 
     const run_cmd = exe.run();
@@ -11,4 +19,5 @@ pub fn build(b: *Builder) void {
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
+
 }

@@ -1,0 +1,32 @@
+const std = @import("std");
+const Gpio = @import("src/zen-chika.zen").Gpio;
+const GpioPort = @import("src/zen-chika.zen").GpioPort;
+const PinMode = @import("src/zen-chika.zen").PinMode;
+const GpioPin = @import("src/zen-chika.zen").GpioPin;
+
+pub fn main() void {
+
+    // GPIOの初期化
+    const gpio = Gpio.init();
+
+    // Piの設定
+    const led = GpioPort.init(gpio, GpioPin.PIN_0);
+
+    led.pin_mode(PinMode.OUTPUT);
+
+    led.digital_write(1);
+    std.time.sleep(1000 * std.time.millisecond);
+
+    led.digital_write(0);
+    std.time.sleep(1000 * std.time.millisecond);
+
+
+    // Piの設定
+    const sw = GpioPort.init(gpio, GpioPin.PIN_1);
+
+    sw.pin_mode(PinMode.INPUT);
+
+    var result:u1 = sw.digital_Read();    //仮想Pin0の状態を取得
+    std.debug.warn("read result {}.\n",result);
+}
+
