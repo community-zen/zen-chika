@@ -45,19 +45,21 @@ pub fn getPtr( comptime T: type, baseAddress: usize ) *volatile T {
 
 }
 
-const TestReg = struct {
-    reg1: u32 = 0,
-    reg2: u32 = 1,
 
-    const OFFSET : u32 = 0x00200000;
-    const MEM_PATH = "src/test/mem"[0..];
-    const GPIOMEM_PATH = "src/test/gpiomem"[0..];
 
-};
+test "getPtr" {
 
-// test "getPtr" {
+    const TestReg = struct {
+        reg1: u32 = 0,
+        reg2: u32 = 1,
 
-//     const ptr = getPtr( TestReg, 0x3F000000 );
-//     std.testing.ok( @intCast( usize, 0x3F000000+TestReg.OFFSET) < @ptrToInt( ptr )  );
+        const OFFSET : u32 = 0x00200000;
+        const MEM_PATH = "src/test/mem"[0..];
+        const GPIOMEM_PATH = "src/test/gpiomem"[0..];
 
-// }
+    };
+
+    const ptr = getPtr( TestReg, 0x3F000000 );
+    std.testing.ok( @intCast( usize, 0x3F000000+TestReg.OFFSET) < @ptrToInt( ptr )  );
+
+}

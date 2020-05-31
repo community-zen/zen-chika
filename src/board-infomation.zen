@@ -53,6 +53,17 @@ pub const PiModel = enum(u32) {
     }
 };
 
+test "PiModel" {
+
+    std.testing.equal(PiModel.PI_MODEL_AP, PiModel.get_from_revision(0x900021));
+    std.testing.equal(PiModel.PI_MODEL_ZERO, PiModel.get_from_revision(0x920092));
+    std.testing.equal(PiModel.PI_MODEL_2B, PiModel.get_from_revision(0xa22042));
+    std.testing.equal(PiModel.PI_MODEL_3B, PiModel.get_from_revision(0xa02082));
+    std.testing.equal(PiModel.PI_MODEL_4B, PiModel.get_from_revision(0xc03112));
+
+    std.testing.equal("PI_MODEL_3B"[0..], PiModel.get_names(PiModel.PI_MODEL_3B));
+}
+
 pub const PiMaker = enum(u32) {
     PI_MAKER_SONY_UK = 0x0,
     PI_MAKER_EGOMAN,
@@ -90,6 +101,16 @@ pub const PiMaker = enum(u32) {
     }
 };
 
+test "PiMaker" {
+
+    std.testing.equal(PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision(0x900021));
+    std.testing.equal(PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision(0x920092));
+    std.testing.equal(PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision(0xa21041));
+    std.testing.equal(PiMaker.PI_MAKER_SONY_JAPAN, PiMaker.get_from_revision(0xa32082));
+    std.testing.equal(PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision(0xc03112));
+
+}
+
 pub const PiVersion = enum(u32) {
     PI_VERSION_1 = 0x0,
     PI_VERSION_1_1,
@@ -117,6 +138,12 @@ pub const PiVersion = enum(u32) {
         return @tagName(version);
     }
 };
+
+test "PiVersion" {
+
+    std.testing.equal(PiVersion.PI_VERSION_1_2, PiVersion.get_from_revision(0xa02082));
+
+}
 
 pub const BoardInfomation = struct {
 
@@ -192,7 +219,7 @@ pub const BoardInfomation = struct {
     // @note
     //   検索文字列から始まる一行が複数行あった場合は、初めにヒットしたものが選択される
     ///////////////////////////////////////////
-    pub fn getRevisionLine(cpuinfo:[]const u8)  []const u8 {
+    fn getRevisionLine(cpuinfo:[]const u8)  []const u8 {
 
         var start   : usize = 0;
         var end     : usize = 0;
@@ -278,37 +305,11 @@ pub const BoardInfomation = struct {
 
 };
 
-// test "PiModel" {
+test "BoardInfomation" {
+    const BI = BoardInfomation.init();
 
-//     std.testing.equal(PiModel.PI_MODEL_AP, PiModel.get_from_revision(0x900021));
-//     std.testing.equal(PiModel.PI_MODEL_ZERO, PiModel.get_from_revision(0x920092));
-//     std.testing.equal(PiModel.PI_MODEL_2B, PiModel.get_from_revision(0xa22042));
-//     std.testing.equal(PiModel.PI_MODEL_3B, PiModel.get_from_revision(0xa02082));
-//     std.testing.equal(PiModel.PI_MODEL_4B, PiModel.get_from_revision(0xc03112));
+    std.testing.equal(BI.model, PiModel.PI_MODEL_3B);
+    std.testing.equal(BI.maker, PiMaker.PI_MAKER_SONY_JAPAN);
+    std.testing.equal(BI.version, PiVersion.PI_VERSION_1_2);
 
-//     std.testing.equal("PI_MODEL_3B"[0..], PiModel.get_names(PiModel.PI_MODEL_3B));
-// }
-// test "PiMaker" {
-
-//     std.testing.equal(PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision(0x900021));
-//     std.testing.equal(PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision(0x920092));
-//     std.testing.equal(PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision(0xa21041));
-//     std.testing.equal(PiMaker.PI_MAKER_SONY_JAPAN, PiMaker.get_from_revision(0xa32082));
-//     std.testing.equal(PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision(0xc03112));
-
-// }
-
-// test "PiVersion" {
-
-//     std.testing.equal(PiVersion.PI_VERSION_1_2, PiVersion.get_from_revision(0xa02082));
-
-// }
-
-// test "BoardInfomation" {
-//     const BI = BoardInfomation.init();
-
-//     std.testing.equal(BI.model, PiModel.PI_MODEL_3B);
-//     std.testing.equal(BI.maker, PiMaker.PI_MAKER_SONY_JAPAN);
-//     std.testing.equal(BI.version, PiVersion.PI_VERSION_1_2);
-
-// }
+}

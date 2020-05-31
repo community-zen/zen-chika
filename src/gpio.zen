@@ -7,9 +7,11 @@
 const std = @import("std");
 
 const BoardInfomation = @import("board-infomation.zen").BoardInfomation;
-const PiModel = @import("board-infomation.zen").PiModel;
 const GpioRegister = @import("gpio-register.zen").GpioRegister;
 const Register = @import("common/register.zen");
+
+const REGISTER_BIT_WIDTH : u5 = 31;
+
 
 pub const Gpio = struct {
     boardInfo:BoardInfomation,
@@ -18,8 +20,6 @@ pub const Gpio = struct {
 
     var once : bool = false;
     var gpio : Gpio = undefined;
-
-    const registerBitWidth : u5 = 31;
 
     ///////////////////////////////////////////
     // @brief  初期化処理
@@ -82,7 +82,7 @@ pub const Gpio = struct {
     //   対象のPinに対応するレジスタを判断する
     ///////////////////////////////////////////
     pub fn reg_set(self:Self,bcmPin:u5) void {
-        var chooseSet = (bcmPin / registerBitWidth);
+        var chooseSet = (bcmPin / REGISTER_BIT_WIDTH);
 
         var set = switch (chooseSet) {
             0 => &self.gpioReg.gpset0,
@@ -99,7 +99,7 @@ pub const Gpio = struct {
     //   対象のPinに対応するレジスタを判断する
     ///////////////////////////////////////////
     pub fn reg_clr(self:Self,bcmPin:u5) void {
-        var chooseClr = (bcmPin / registerBitWidth);
+        var chooseClr = (bcmPin / REGISTER_BIT_WIDTH);
 
         var clr = switch (chooseClr) {
             0 => &self.gpioReg.gpclr0,
@@ -116,7 +116,7 @@ pub const Gpio = struct {
     //   対象のPinに対応するレジスタを判断する
     ///////////////////////////////////////////
     pub fn reg_lev(self:Self, bcmPin:u5) u1 {
-        var chooseLev = (bcmPin / registerBitWidth);
+        var chooseLev = (bcmPin / REGISTER_BIT_WIDTH);
 
         // データが入っているレジスタを求める。
         var lev = switch (chooseLev) {
@@ -134,14 +134,44 @@ pub const Gpio = struct {
     }
 };
 
-// test "Gpio" {
-//     const gpio = Gpio.init() catch unreachable;
-//     std.testing.equal(gpio.boardInfo.model, BoardInfomation.PiModel.PI_MODEL_4B);
-//     std.testing.equal(gpio.boardInfo.maker, BoardInfomation.PiMaker.PI_MAKER_SONY_UK);
-//     std.testing.equal(gpio.boardInfo.version, BoardInfomation.PiVersion.PI_VERSION_1_2);
+test "Gpio" {
 
-//     Gpio.pin_mode(17,1) catch unreachable;
-//     Gpio.reg_set(17) catch unreachable;
-//     Gpio.reg_clr(17) catch unreachable;
-// }
+    const PiModel = @import("board-infomation.zen").PiModel;
+    const PiMaker = @import("board-infomation.zen").PiMaker;
+    const PiVersion = @import("board-infomation.zen").PiVersion;
 
+    var gpioRegister = GpioRegister{};
+    var boardInfomation = BoardInfomation{
+        .model = PiModel.PI_MODEL_3B,
+        .maker = PiMaker.PI_MAKER_SONY_JAPAN,
+        .version = PiVersion.PI_VERSION_1_2,
+        .baseAddress = 0x3F000000,
+    };
+
+    var gpio = Gpio{
+        .boardInfo = boardInfomation,
+        .gpioReg = &gpioRegister,
+    };
+
+    const INPUT = 1;
+
+    // reg_fselのテスト //
+    var expected_from_fsel0 = @is(u32, 1) << 0;
+    gpio.reg_fsel(0, INPUT);
+    std.testing.equal( expected_from_fsel0, gpio.gpioReg.gpfsel0 );
+
+    expected_from_fsel0 += @is(u32, 1) << 27;
+    gpio.reg_fsel(9, INPUT);
+    std.testing.equal( expected_from_fsel0, gpio.gpioReg.gpfsel0 );
+
+    var expected_from_fsel3 = @is(u32, 1) << 3;
+    gpio.reg_fsel(31, INPUT);
+    std.testing.equal( expected_from_fsel3, gpio.gpioReg.gpfsel3 );
+
+    // 異常系 //
+    // gpio.reg_fsel(-1, INPUT);
+    // gpio.reg_fsel(32, INPUT);
+
+
+
+}

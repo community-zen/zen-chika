@@ -86,65 +86,65 @@ pub const GpioPort = struct {
     }
 };
 
-// test "GpioPin" {
-//     const pin0 = GpioPin.PIN_0;
-//     const pin1 = GpioPin.PIN_1;
-//     const pin7 = GpioPin.PIN_7;
+test "GpioPin" {
+    const pin0 = GpioPin.PIN_0;
+    const pin1 = GpioPin.PIN_1;
+    const pin7 = GpioPin.PIN_7;
 
-//     comptime {
-//         std.testing.equal(17, pin0.to_bcm_pin() );
-//         std.testing.equal(18, pin1.to_bcm_pin() );
-//         std.testing.equal(4, pin7.to_bcm_pin() );
-//     }
-// }
-// test "GpioPort" {
+    comptime {
+        std.testing.equal(17, pin0.to_bcm_pin() );
+        std.testing.equal(18, pin1.to_bcm_pin() );
+        std.testing.equal(4, pin7.to_bcm_pin() );
+    }
+}
+test "GpioPort" {
 
-//     const BoardInfomation = @import("board-infomation.zen").BoardInfomation;
-//     const PiModel = @import("board-infomation.zen").PiModel;
-//     const PiMaker = @import("board-infomation.zen").PiMaker;
-//     const PiVersion = @import("board-infomation.zen").PiVersion;
-//     const GpioRegister = @import("gpio-register.zen").GpioRegister;
+    const BoardInfomation = @import("board-infomation.zen").BoardInfomation;
+    const PiModel = @import("board-infomation.zen").PiModel;
+    const PiMaker = @import("board-infomation.zen").PiMaker;
+    const PiVersion = @import("board-infomation.zen").PiVersion;
+    const GpioRegister = @import("gpio-register.zen").GpioRegister;
 
-//     var gpioRegister = GpioRegister{};
-//     var boardInfomation = BoardInfomation{
-//         .model = PiModel.PI_MODEL_3B,
-//         .maker = PiMaker.PI_MAKER_SONY_JAPAN,
-//         .version = PiVersion.PI_VERSION_1_2,
-//         .baseAddress = 0x3F000000,
-//     };
+    var gpioRegister = GpioRegister{};
+    var boardInfomation = BoardInfomation{
+        .model = PiModel.PI_MODEL_3B,
+        .maker = PiMaker.PI_MAKER_SONY_JAPAN,
+        .version = PiVersion.PI_VERSION_1_2,
+        .baseAddress = 0x3F000000,
+    };
 
-//     var gpio = Gpio{
-//         .boardInfo = boardInfomation,
-//         .gpioReg = &gpioRegister,
-//     };
+    var gpio = Gpio{
+        .boardInfo = boardInfomation,
+        .gpioReg = &gpioRegister,
+    };
 
-//     var output = GpioPort.init(gpio, GpioPin.PIN_0);
+    var output = GpioPort.init(gpio, GpioPin.PIN_0);
 
-//     output.pin_mode(PinMode.OUTPUT);
-//     std.testing.equal( @is(u32, 1) << 21, gpio.gpioReg.gpfsel1 );
+    output.pin_mode(PinMode.OUTPUT);
+    std.testing.equal( @is(u32, 1) << 21, gpio.gpioReg.gpfsel1 );
 
-//     output.digital_write(1);
-//     std.testing.equal( @is(u32, 1) << 17, gpio.gpioReg.gpset0 );
+    output.digital_write(1);
+    std.testing.equal( @is(u32, 1) << 17, gpio.gpioReg.gpset0 );
 
-//     output.digital_write(0);
-//     std.testing.equal( @is(u32, 1) << 17, gpio.gpioReg.gpclr0 );
+    output.digital_write(0);
+    std.testing.equal( @is(u32, 1) << 17, gpio.gpioReg.gpclr0 );
 
-//     // output.digital_write(2);
-//     // output.digital_write(-1);
+    // output.digital_write(2);
+    // output.digital_write(-1);
 
-//     var input = GpioPort.init(gpio, GpioPin.PIN_1);
+    var input = GpioPort.init(gpio, GpioPin.PIN_1);
 
-//     input.pin_mode(PinMode.INPUT);
+    input.pin_mode(PinMode.INPUT);
 
-//     const off = input.digital_Read();
-//     std.testing.equal( @is(u1, 0), off );
+    const off = input.digital_Read();
+    std.testing.equal( @is(u1, 0), off );
 
-//     // レジスタにON入力を設定する
-//     gpio.gpioReg.gplev0 = @is(u32, 1) << 18;
+    // レジスタにON入力を設定する
+    gpio.gpioReg.gplev0 = @is(u32, 1) << 18;
 
-//     const on = input.digital_Read();
-//     std.testing.equal( @is(u1, 1), on );
+    const on = input.digital_Read();
+    std.testing.equal( @is(u1, 1), on );
 
 
-// }
+}
 
