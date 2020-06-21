@@ -4,19 +4,19 @@
 //   gpio-portから指示を受け、registerに書き込み指示を出す
 ///////////////////////////////////////////
 
-const std = @import("std");
+const std = @import ("std");
 
-const BoardInfomation = @import("board-infomation.zen").BoardInfomation;
-const GpioRegister = @import("gpio-register.zen").GpioRegister;
-const Register = @import("common/register.zen");
+const BoardInfomation = @import ("board-infomation.zen").BoardInfomation;
+const GpioRegister = @import ("gpio-register.zen").GpioRegister;
+const Register = @import ("common/register.zen");
 
 const REGISTER_BIT_WIDTH : u5 = 31;
 
 
 pub const Gpio = struct {
-    boardInfo:BoardInfomation,
-    gpioReg: *volatile GpioRegister,
-    const Self = @This();
+    pub boardInfo:BoardInfomation,
+    pub gpioReg: *mut volatile GpioRegister,
+    const Self = @This ();
 
     var once : bool = false;
     var gpio : Gpio = undefined;
@@ -27,15 +27,15 @@ pub const Gpio = struct {
     //   Gpioコントローラを生成する
     //   gpioを使う際は必ず生成してください。なお、Gpioはシングルトンだよ。
     ///////////////////////////////////////////
-    pub fn init() Gpio {
+    pub fn init () Gpio {
 
         // シングルトンとして実行する
-        if( Self.once == true ) return Self.gpio;
+        if (Self.once == true) return Self.gpio;
 
         // 「bordInfo」で、ボード情報を元にペリフェラルベースアドレスを求めたのち、
         // 「gpioReg」より、gpioレジスタの先頭アドレスを取得する。
-        const boardInfo = BoardInfomation.init();
-        const gpioReg = Register.getPtr( GpioRegister, boardInfo.baseAddress );
+        const boardInfo = BoardInfomation.init ();
+        const gpioReg = Register.getPtr (GpioRegister, boardInfo.baseAddress);
 
         Self.gpio = Self {
             .boardInfo = boardInfo,
@@ -53,27 +53,29 @@ pub const Gpio = struct {
     //   ユーザーが指定したピンを指定したモードに設定する
     //   ※INPUT,OUTPUTのみ対応
     ///////////////////////////////////////////
-    pub fn reg_fsel( self:Self, bcmPin:u5, mode:u3 ) void {
+    pub fn reg_fsel (self:Self, bcmPin:u5, mode:u3) void {
 
-        if( mode > 1 ){std.debug.panic("The mode value is abnormal. Expecting INPUT or OUTPUT.");}
+        if (mode > 1) {
+            std.debug.panic ("{}", .{"The mode value is abnormal. Expecting INPUT or OUTPUT."});
+        }
 
         // GPIO毎に設定するべきFSELレジスタを求める
         const chooseFsel = (bcmPin / 10);
-        var fsel = switch (chooseFsel) {
-            0 => &self.gpioReg.gpfsel0,
-            1 => &self.gpioReg.gpfsel1,
-            2 => &self.gpioReg.gpfsel2,
-            3 => &self.gpioReg.gpfsel3,
-            4 => &self.gpioReg.gpfsel4,
-            5 => &self.gpioReg.gpfsel5,
-            else => std.debug.panic("The FSEL register is abnormal. Check the bcmPin number."),
+        const fsel = switch (chooseFsel) {
+            0 => &mut self.gpioReg.gpfsel0,
+            1 => &mut self.gpioReg.gpfsel1,
+            2 => &mut self.gpioReg.gpfsel2,
+            3 => &mut self.gpioReg.gpfsel3,
+            4 => &mut self.gpioReg.gpfsel4,
+            5 => &mut self.gpioReg.gpfsel5,
+            else => std.debug.panic ("{}", .{"The FSEL register is abnormal. Check the bcmPin number."}),
         };
 
-        const shift : u5 = @mod(bcmPin, 10) * 3;
-        const threeBitMask = ~(@is(u32, 7)  << shift);
-        const modeMask = @intCast(u32,mode) << shift;
+        const shift : u5 = @mod (bcmPin, 10) * 3;
+        const threeBitMask = ~(@to (u32, 7) << shift);
+        const modeMask = @intCast (u32,mode) << shift;
 
-        fsel.* = fsel.* & threeBitMask | modeMask;
+        fsel.* = ((fsel.* & threeBitMask) | modeMask);
     }
 
     ///////////////////////////////////////////
@@ -81,16 +83,16 @@ pub const Gpio = struct {
     // @note
     //   対象のPinに対応するレジスタを判断する
     ///////////////////////////////////////////
-    pub fn reg_set(self:Self,bcmPin:u5) void {
-        var chooseSet = (bcmPin / REGISTER_BIT_WIDTH);
+    pub fn reg_set (self:Self,bcmPin:u5) void {
+        const chooseSet = (bcmPin / REGISTER_BIT_WIDTH);
 
-        var set = switch (chooseSet) {
-            0 => &self.gpioReg.gpset0,
-            1 => &self.gpioReg.gpset1,
-            else => std.debug.panic("The SET register is abnormal. Check the bcmPin number."),
+        const set = switch (chooseSet) {
+            0 => &mut self.gpioReg.gpset0,
+            1 => &mut self.gpioReg.gpset1,
+            else => std.debug.panic ("{}", .{"The SET register is abnormal. Check the bcmPin number."} ),
         };
 
-        set.* = @is(u32, 1) << bcmPin;
+        set.* = @to (u32, 1) << bcmPin;
     }
 
     ///////////////////////////////////////////
@@ -98,16 +100,16 @@ pub const Gpio = struct {
     // @note
     //   対象のPinに対応するレジスタを判断する
     ///////////////////////////////////////////
-    pub fn reg_clr(self:Self,bcmPin:u5) void {
-        var chooseClr = (bcmPin / REGISTER_BIT_WIDTH);
+    pub fn reg_clr (self:Self,bcmPin:u5) void {
+        const chooseClr = (bcmPin / REGISTER_BIT_WIDTH);
 
-        var clr = switch (chooseClr) {
-            0 => &self.gpioReg.gpclr0,
-            1 => &self.gpioReg.gpclr1,
-            else => std.debug.panic("The CLR register is abnormal. Check the bcmPin number."),
+        const clr = switch (chooseClr) {
+            0 => &mut self.gpioReg.gpclr0,
+            1 => &mut self.gpioReg.gpclr1,
+            else => std.debug.panic ("{}", .{"The CLR register is abnormal. Check the bcmPin number."} ),
         };
 
-        clr.* = @is(u32, 1) << bcmPin;
+        clr.* = @to (u32, 1) << bcmPin;
     }
 
     ///////////////////////////////////////////
@@ -115,58 +117,58 @@ pub const Gpio = struct {
     // @note
     //   対象のPinに対応するレジスタを判断する
     ///////////////////////////////////////////
-    pub fn reg_lev(self:Self, bcmPin:u5) u1 {
-        var chooseLev = (bcmPin / REGISTER_BIT_WIDTH);
+    pub fn reg_lev (self:Self, bcmPin:u5) u1 {
+        const chooseLev = (bcmPin / REGISTER_BIT_WIDTH);
 
         // データが入っているレジスタを求める。
-        var lev = switch (chooseLev) {
+        const lev = switch (chooseLev) {
             0 => self.gpioReg.gplev0 ,
             1 => self.gpioReg.gplev1 ,
-            else => std.debug.panic("The LEV register is abnormal. Check the bcmPin number."),
+            else => std.debug.panic ("{}", .{"The LEV register is abnormal. Check the bcmPin number."} ),
         };
 
         // レジスタからデータを取得する。
-        return if(lev & (@is(u32, 1) << bcmPin) != 0)
-            @is(u1, 1)
+        return if (lev & (@to(u32, 1) << bcmPin) != 0)
+            @to (u1, 1)
         else
-            @is(u1, 0);
+            @to (u1, 0);
 
     }
 };
 
 test "Gpio" {
 
-    const PiModel = @import("board-infomation.zen").PiModel;
-    const PiMaker = @import("board-infomation.zen").PiMaker;
-    const PiVersion = @import("board-infomation.zen").PiVersion;
+    const PiModel = @import ("board-infomation.zen").PiModel;
+    const PiMaker = @import ("board-infomation.zen").PiMaker;
+    const PiVersion = @import ("board-infomation.zen").PiVersion;
 
-    var gpioRegister = GpioRegister{};
-    var boardInfomation = BoardInfomation{
+    var gpioRegister = GpioRegister {};
+    var boardInfomation = BoardInfomation {
         .model = PiModel.PI_MODEL_3B,
         .maker = PiMaker.PI_MAKER_SONY_JAPAN,
         .version = PiVersion.PI_VERSION_1_2,
         .baseAddress = 0x3F000000,
     };
 
-    var gpio = Gpio{
+    var gpio = Gpio {
         .boardInfo = boardInfomation,
-        .gpioReg = &gpioRegister,
+        .gpioReg = &mut gpioRegister,
     };
 
     const INPUT = 1;
 
     // reg_fselのテスト //
-    var expected_from_fsel0 = @is(u32, 1) << 0;
-    gpio.reg_fsel(0, INPUT);
-    std.testing.equal( expected_from_fsel0, gpio.gpioReg.gpfsel0 );
+    var expected_from_fsel0 = @to (u32, 1) << 0;
+    gpio.reg_fsel (0, INPUT);
+    std.testing.equal (expected_from_fsel0, gpio.gpioReg.gpfsel0);
 
-    expected_from_fsel0 += @is(u32, 1) << 27;
-    gpio.reg_fsel(9, INPUT);
-    std.testing.equal( expected_from_fsel0, gpio.gpioReg.gpfsel0 );
+    expected_from_fsel0 += @to (u32, 1) << 27;
+    gpio.reg_fsel (9, INPUT);
+    std.testing.equal (expected_from_fsel0, gpio.gpioReg.gpfsel0);
 
-    var expected_from_fsel3 = @is(u32, 1) << 3;
-    gpio.reg_fsel(31, INPUT);
-    std.testing.equal( expected_from_fsel3, gpio.gpioReg.gpfsel3 );
+    var expected_from_fsel3 = @to (u32, 1) << 3;
+    gpio.reg_fsel (31, INPUT);
+    std.testing.equal (expected_from_fsel3, gpio.gpioReg.gpfsel3);
 
     // 異常系 //
     // gpio.reg_fsel(-1, INPUT);

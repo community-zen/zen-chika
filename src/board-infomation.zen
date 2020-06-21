@@ -4,15 +4,15 @@
 //   ファイルシステムから各種情報を取得
 ///////////////////////////////////////////
 
-const std = @import("std");
-const builtin = @import("builtin");
+const std = @import ("std");
+const builtin = @import ("builtin");
 const is_test = builtin.is_test;
 const fs = std.fs;
 const heap = std.heap;
 const mem = std.mem;
 const math = std.math;
 
-pub const PiModel = enum(u32) {
+pub const PiModel = enum (u32) {
     PI_MODEL_A = 0x0,
     PI_MODEL_B,
     PI_MODEL_AP,
@@ -38,9 +38,9 @@ pub const PiModel = enum(u32) {
     // @note
     //   リビジョン情報からモデルを判断し返す
     ///////////////////////////////////////////
-    pub fn get_from_revision(revison:u32) PiModel {
+    pub fn get_from_revision (revison:u32) PiModel {
         const model : u32 = (revison & (0xFF <<  4)) >>  4 ;
-        return @intToEnum(PiModel,model);
+        return @intToEnum (PiModel,model);
     }
 
     ///////////////////////////////////////////
@@ -48,23 +48,23 @@ pub const PiModel = enum(u32) {
     // @note
     //   リビジョン情報からモデル名を文字列として判断し返す
     ///////////////////////////////////////////
-    pub fn get_names(comptime model: PiModel) []const u8 {
-        return @tagName(model);
+    pub fn get_names (comptime model: PiModel) []u8 {
+        return @tagName (model);
     }
 };
 
 test "PiModel" {
 
-    std.testing.equal(PiModel.PI_MODEL_AP, PiModel.get_from_revision(0x900021));
-    std.testing.equal(PiModel.PI_MODEL_ZERO, PiModel.get_from_revision(0x920092));
-    std.testing.equal(PiModel.PI_MODEL_2B, PiModel.get_from_revision(0xa22042));
-    std.testing.equal(PiModel.PI_MODEL_3B, PiModel.get_from_revision(0xa02082));
-    std.testing.equal(PiModel.PI_MODEL_4B, PiModel.get_from_revision(0xc03112));
+    std.testing.equal (PiModel.PI_MODEL_AP, PiModel.get_from_revision (0x900021));
+    std.testing.equal (PiModel.PI_MODEL_ZERO, PiModel.get_from_revision (0x920092));
+    std.testing.equal (PiModel.PI_MODEL_2B, PiModel.get_from_revision (0xa22042));
+    std.testing.equal (PiModel.PI_MODEL_3B, PiModel.get_from_revision (0xa02082));
+    std.testing.equal (PiModel.PI_MODEL_4B, PiModel.get_from_revision (0xc03112));
 
-    std.testing.equal("PI_MODEL_3B"[0..], PiModel.get_names(PiModel.PI_MODEL_3B));
+    std.testing.equalSlices (u8, "PI_MODEL_3B", PiModel.get_names (PiModel.PI_MODEL_3B));
 }
 
-pub const PiMaker = enum(u32) {
+pub const PiMaker = enum (u32) {
     PI_MAKER_SONY_UK = 0x0,
     PI_MAKER_EGOMAN,
     PI_MAKER_EMBEST,
@@ -77,7 +77,7 @@ pub const PiMaker = enum(u32) {
     // @note
     //   リビジョン情報からメーカーを判断し返す
     ///////////////////////////////////////////
-    pub fn get_from_revision(revison:u32) PiMaker {
+    pub fn get_from_revision (revison:u32) PiMaker {
         const maker : u32 = (revison & (0x0F << 16)) >> 16 ;
 
         return switch (maker) {
@@ -96,22 +96,22 @@ pub const PiMaker = enum(u32) {
     // @note
     //   リビジョン情報からメーカー情報を文字列として判断し返す
     ///////////////////////////////////////////
-    pub fn get_names(comptime maker: PiMaker) []const u8 {
-        return @tagName(maker);
+    pub fn get_names (comptime maker: PiMaker) []u8 {
+        return @tagName (maker);
     }
 };
 
 test "PiMaker" {
 
-    std.testing.equal(PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision(0x900021));
-    std.testing.equal(PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision(0x920092));
-    std.testing.equal(PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision(0xa21041));
-    std.testing.equal(PiMaker.PI_MAKER_SONY_JAPAN, PiMaker.get_from_revision(0xa32082));
-    std.testing.equal(PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision(0xc03112));
+    std.testing.equal (PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision (0x900021));
+    std.testing.equal (PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision (0x920092));
+    std.testing.equal (PiMaker.PI_MAKER_EMBEST, PiMaker.get_from_revision (0xa21041));
+    std.testing.equal (PiMaker.PI_MAKER_SONY_JAPAN, PiMaker.get_from_revision (0xa32082));
+    std.testing.equal (PiMaker.PI_MAKER_SONY_UK, PiMaker.get_from_revision (0xc03112));
 
 }
 
-pub const PiVersion = enum(u32) {
+pub const PiVersion = enum (u32) {
     PI_VERSION_1 = 0x0,
     PI_VERSION_1_1,
     PI_VERSION_1_2,
@@ -124,9 +124,9 @@ pub const PiVersion = enum(u32) {
     // @note
     //   リビジョン情報からバージョンを判断し返す
     ///////////////////////////////////////////
-    pub fn get_from_revision(revison:u32) PiVersion {
+    pub fn get_from_revision (revison:u32) PiVersion {
         const version : u32 = (revison & (0x0F <<  0)) >>  0 ;
-        return @intToEnum(PiVersion,version);
+        return @intToEnum (PiVersion,version);
     }
 
     ///////////////////////////////////////////
@@ -134,49 +134,49 @@ pub const PiVersion = enum(u32) {
     // @note
     //   リビジョン情報からバージョン情報を文字列として判断し返す
     ///////////////////////////////////////////
-    pub fn get_names(comptime version: PiMaker) []const u8 {
-        return @tagName(version);
+    pub fn get_names (comptime version: PiMaker) []u8 {
+        return @tagName (version);
     }
 };
 
 test "PiVersion" {
 
-    std.testing.equal(PiVersion.PI_VERSION_1_2, PiVersion.get_from_revision(0xa02082));
+    std.testing.equal (PiVersion.PI_VERSION_1_2, PiVersion.get_from_revision (0xa02082));
 
 }
 
 pub const BoardInfomation = struct {
 
-    model:PiModel,
-    maker:PiMaker,
-    version:PiVersion,
-    baseAddress:usize,
+    pub model:PiModel,
+    pub maker:PiMaker,
+    pub version:PiVersion,
+    pub baseAddress:usize,
 
-    const Self = @This();
+    const Self = @This ();
 
     ///////////////////////////////////////////
     // @brief  初期化処理
     // @note
     //   ファイルシステムから各種情報を取得する
     ///////////////////////////////////////////
-    pub fn init() BoardInfomation {
+    pub fn init () BoardInfomation {
 
 
         // CPUの情報を取得する
-        const cpuinfo = getCpuinfo();
-        defer heap.free(heap.direct_allocator, cpuinfo);
+        const cpuinfo = getCpuinfo ();
+        defer heap.free (heap.page_allocator, cpuinfo);
 
         // CPU情報からリビジョン情報を取得する
-        const revisionSlice = getRevisionLine(cpuinfo);
-        const revisionNum = revitionSliceToNumber(revisionSlice) ;
+        const revisionSlice = getRevisionLine (cpuinfo);
+        const revisionNum = revitionSliceToNumber (revisionSlice) ;
 
         // ラズベリーパイの型番、メーカ、バージョンの取得
-        const model = PiModel.get_from_revision(revisionNum);
-        const maker = PiMaker.get_from_revision(revisionNum);
-        const version = PiVersion.get_from_revision(revisionNum);
+        const model = PiModel.get_from_revision (revisionNum);
+        const maker = PiMaker.get_from_revision (revisionNum);
+        const version = PiVersion.get_from_revision (revisionNum);
 
         // 型番からレジスタのベースアドレスを取得する
-        const baseAddress = conv_to_base_address_from_model(model);
+        const baseAddress = conv_to_base_address_from_model (model);
 
         return Self {
             .model = model,
@@ -192,24 +192,25 @@ pub const BoardInfomation = struct {
     //    正常終了 -> 呼び出し元で開放
     //    異常終了 -> この関数内で開放
     ///////////////////////////////////////////
-    fn getCpuinfo()  []u8 {
+    fn getCpuinfo () []u8 {
 
         // (TODO)テスト実行時のみ参照ファイルを変更する(他に良い方法があれば置き換え)
-        var CPU_INFO_PATH : [] const u8 = undefined;
-        if( !is_test ) {
+        var CPU_INFO_PATH : []u8 = undefined;
+        if (!is_test) {
             CPU_INFO_PATH = "/proc/cpuinfo"[0..];
         } else {
             CPU_INFO_PATH = "src/test/cpuinfo"[0..];
         }
 
-        const file = fs.File.openRead(CPU_INFO_PATH) catch unreachable;
-        defer file.close();
+        // const file = fs.File.openRead(CPU_INFO_PATH) catch unreachable;
+        const file = std.fs.cwd ().openFile (CPU_INFO_PATH, .{}) catch unreachable;
+        defer file.close ();
 
         // (TODO)バッファサイズ1500は、根拠がないため今後改善する。
         // @intCast(usize, try file.getEndPos());では、ファイルサイズ取得に失敗した
-        const buf = heap.alloc(heap.direct_allocator, u8, 1500) catch unreachable;
-        const cpuinfo = file.read(buf) catch unreachable;
-        errdefer heap.free(heap.direct_allocator, cpuinfo);
+        const buf = heap.alloc (heap.page_allocator, u8, 1500) catch unreachable;
+        const cpuinfo = file.read (buf) catch unreachable;
+        errdefer heap.free (heap.page_allocator, cpuinfo);
 
         return cpuinfo;
 
@@ -219,7 +220,7 @@ pub const BoardInfomation = struct {
     // @note
     //   検索文字列から始まる一行が複数行あった場合は、初めにヒットしたものが選択される
     ///////////////////////////////////////////
-    fn getRevisionLine(cpuinfo:[]const u8)  []const u8 {
+    fn getRevisionLine (cpuinfo:[]u8) []u8 {
 
         var start   : usize = 0;
         var end     : usize = 0;
@@ -227,12 +228,12 @@ pub const BoardInfomation = struct {
 
         return while (end < cpuinfo.len) : (end += 1) {
 
-            if(cpuinfo[end] == '\n'){
+            if (cpuinfo[end] == '\n') {
 
                 const line = cpuinfo[start..end];
 
                 // 先頭文字がキーワードと一致する時、そこからRevisionコードだけを取得する
-                if( mem.startsWith(u8, line, keyword) ){
+                if (mem.startsWith(u8, line, keyword)) {
                     break line[keyword.len..];
                 }
                 start = end + 1;
@@ -241,41 +242,39 @@ pub const BoardInfomation = struct {
 
         } else {
             // If the cpuinfo is passed correctly, it does not come here.
-            std.debug.panic("Don't find 'revision' line in the argument file.");
+            std.debug.panic ("{}", .{"Don't find 'revision' line in the argument file."});
         };
-
-
     }
 
     ///////////////////////////////////////////
     // @brief  文字列を数値型にキャストする
     // @note
     ///////////////////////////////////////////
-    fn revitionSliceToNumber(revision:[]const u8)  u32 {
+    fn revitionSliceToNumber (revision:[]u8)  u32 {
 
         var digit   : u32 = 0;
         var number  : u32 = 0;
 
-        if( revision.len > 8 ) {
-            std.debug.panic("The revistion number is no more than 8 digits.");
+        if (revision.len > 8) {
+            std.debug.panic ("{}", .{"The revistion number is no more than 8 digits."});
         }
 
-        const revision_len = @intCast(u32,revision.len);
+        const revision_len = @intCast (u32,revision.len);
 
-        while( digit < revision_len ) : ( digit+=1 ) {
+        while (digit < revision_len) : ( digit+=1 ) {
 
             const cnv_num = switch (revision[digit]) {
                 '0'...'9' => (revision[digit] - '0') + 0x0,
                 'a'...'z' => (revision[digit] - 'a') + 0xa,
                 else      => {
                     // If it's a slice type hexadecimal number, it does not come here.
-                    std.debug.panic("Failed to convert.");
+                    std.debug.panic ("{}", .{"Failed to convert."});
                 },
             };
 
             const base = 16;
-            const exponent = revision_len - 1 - digit;
-            number += cnv_num * math.pow(u32, base, exponent);
+            const exponent = ((revision_len - 1) - digit);
+            number += cnv_num * math.pow (u32, base, exponent);
 
         }
 
@@ -285,7 +284,7 @@ pub const BoardInfomation = struct {
     // @brief  型番からベースアドレスを判断する
     // @note
     ///////////////////////////////////////////
-    fn conv_to_base_address_from_model(model:PiModel)  usize {
+    fn conv_to_base_address_from_model (model:PiModel)  usize {
 
         const GPIO_PERI_BASE_OLD  = 0x20000000;
         const GPIO_PERI_BASE_2835 = 0x3F000000;
@@ -306,10 +305,10 @@ pub const BoardInfomation = struct {
 };
 
 test "BoardInfomation" {
-    const BI = BoardInfomation.init();
+    const BI = BoardInfomation.init ();
 
-    std.testing.equal(BI.model, PiModel.PI_MODEL_3B);
-    std.testing.equal(BI.maker, PiMaker.PI_MAKER_SONY_JAPAN);
-    std.testing.equal(BI.version, PiVersion.PI_VERSION_1_2);
+    std.testing.equal (BI.model, PiModel.PI_MODEL_3B);
+    std.testing.equal (BI.maker, PiMaker.PI_MAKER_SONY_JAPAN);
+    std.testing.equal (BI.version, PiVersion.PI_VERSION_1_2);
 
 }

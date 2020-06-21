@@ -4,7 +4,7 @@
 //   gpioから受けた書き込み指示に沿ってレジスタへの書き込み処理を行う
 ///////////////////////////////////////////
 
-const std = @import("std");
+const std = @import ("std");
 const testing = std.testing;
 
 pub const GpioRegister = packed struct {
@@ -15,20 +15,20 @@ pub const GpioRegister = packed struct {
     gpfsel4: u32 = 0,
     gpfsel5: u32 = 0,
 
-    reserved0: [4]u8 = [_]u8{0}**4,
+    reserved0: [4]u8 = [_]u8 {0}**4,
     gpset0: u32 = 0,
     gpset1: u32 = 0,
 
-    reserved1: [4]u8 = [_]u8{0}**4,
+    reserved1: [4]u8 = [_]u8 {0}**4,
     gpclr0: u32 = 0,
     gpclr1: u32 = 0,
 
-    reserved2: [4]u8 = [_]u8{0}**4,
+    reserved2: [4]u8 = [_]u8 {0}**4,
     gplev0: u32 = 0,
     gplev1: u32 = 0,
 
-    reserved3: [4]u8 = [_]u8{0}**4,
-    other:[100]u8 =  [_]u8{0}**100,
+    reserved3: [4]u8 = [_]u8 {0}**4,
+    other:[100]u8 =  [_]u8 {0}**100,
 
     const Self = @This();
 
@@ -42,21 +42,21 @@ pub const GpioRegister = packed struct {
 
 test "GpioRegister" {
 
-    std.testing.equal( @is(usize, 0x00), @byteOffsetOf(GpioRegister, "gpfsel0") );
-    std.testing.equal( @is(usize, 0x04), @byteOffsetOf(GpioRegister, "gpfsel1") );
-    std.testing.equal( @is(usize, 0x08), @byteOffsetOf(GpioRegister, "gpfsel2") );
-    std.testing.equal( @is(usize, 0x0C), @byteOffsetOf(GpioRegister, "gpfsel3") );
-    std.testing.equal( @is(usize, 0x10), @byteOffsetOf(GpioRegister, "gpfsel4") );
-    std.testing.equal( @is(usize, 0x14), @byteOffsetOf(GpioRegister, "gpfsel5") );
+    std.testing.equal (@to (usize, 0x00), @byteOffsetOf (GpioRegister, "gpfsel0"));
+    std.testing.equal (@to (usize, 0x04), @byteOffsetOf (GpioRegister, "gpfsel1"));
+    std.testing.equal (@to (usize, 0x08), @byteOffsetOf (GpioRegister, "gpfsel2"));
+    std.testing.equal (@to (usize, 0x0C), @byteOffsetOf (GpioRegister, "gpfsel3"));
+    std.testing.equal (@to (usize, 0x10), @byteOffsetOf (GpioRegister, "gpfsel4"));
+    std.testing.equal (@to (usize, 0x14), @byteOffsetOf (GpioRegister, "gpfsel5"));
 
-    std.testing.equal( @is(usize, 0x1C), @byteOffsetOf(GpioRegister, "gpset0") );
-    std.testing.equal( @is(usize, 0x20), @byteOffsetOf(GpioRegister, "gpset1") );
+    std.testing.equal (@to (usize, 0x1C), @byteOffsetOf (GpioRegister, "gpset0"));
+    std.testing.equal (@to (usize, 0x20), @byteOffsetOf (GpioRegister, "gpset1"));
 
-    std.testing.equal( @is(usize, 0x28), @byteOffsetOf(GpioRegister, "gpclr0") );
-    std.testing.equal( @is(usize, 0x2C), @byteOffsetOf(GpioRegister, "gpclr1") );
+    std.testing.equal (@to (usize, 0x28), @byteOffsetOf (GpioRegister, "gpclr0"));
+    std.testing.equal (@to (usize, 0x2C), @byteOffsetOf (GpioRegister, "gpclr1"));
 
-    std.testing.equal( @is(usize, 0x34), @byteOffsetOf(GpioRegister, "gplev0") );
-    std.testing.equal( @is(usize, 0x38), @byteOffsetOf(GpioRegister, "gplev1") );
+    std.testing.equal (@to (usize, 0x34), @byteOffsetOf (GpioRegister, "gplev0"));
+    std.testing.equal (@to (usize, 0x38), @byteOffsetOf (GpioRegister, "gplev1"));
 
 }
 
